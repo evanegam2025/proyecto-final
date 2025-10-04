@@ -1,0 +1,566 @@
+/* ======================================================================
+   ESTILOS CSS PARA SISTEMA SVI - CONSULTAS
+   ====================================================================== */
+
+/* Variables CSS para colores empresariales pasteles */
+:root {
+    /* Colores primarios pasteles */
+    --color-primary: #6c96d6;
+    --color-primary-light: #a3c4f3;
+    --color-primary-dark: #4a6fa5;
+    
+    /* Colores secundarios pasteles */
+    --color-success: #90c695;
+    --color-success-light: #b8e6c1;
+    --color-info: #85d1d9;
+    --color-warning: #f4c2a7;
+    --color-danger: #f4a7a7;
+    
+    /* Colores neutros */
+    --color-light: #f8fbff;
+    --color-light-gray: #e8f2ff;
+    --color-medium-gray: #b8d4f0;
+    --color-dark-gray: #5a6c7d;
+    --color-white: #ffffff;
+    
+    /* Gradientes */
+    --gradient-primary: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+    --gradient-background: linear-gradient(135deg, #f8fbff 0%, #e8f2ff 50%, #deeafb 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,251,255,0.8) 100%);
+    
+    /* Sombras suaves */
+    --shadow-soft: 0 4px 20px rgba(108, 150, 214, 0.1);
+    --shadow-medium: 0 8px 30px rgba(108, 150, 214, 0.15);
+    --shadow-strong: 0 12px 40px rgba(108, 150, 214, 0.2);
+    
+    /* Transiciones */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Bordes */
+    --border-radius-sm: 8px;
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+    --border-radius-xl: 20px;
+}
+
+/* Reset y configuración global */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--color-dark-gray);
+    background: var(--gradient-background);
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+}
+
+.loading-spinner .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.loading-text {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+/* Background gradient personalizado */
+.bg-gradient-custom {
+    background: var(--gradient-background);
+    background-attachment: fixed;
+}
+
+/* Navbar personalizada */
+.navbar-glass {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(108, 150, 214, 0.1);
+    box-shadow: var(--shadow-soft);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary) !important;
+}
+
+/* Logo */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-img {
+    max-width: 180px;
+    height: auto;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
+    transition: var(--transition-smooth);
+}
+
+.logo-img:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: var(--shadow-strong);
+}
+
+/* Títulos */
+.main-title {
+    color: var(--color-primary-dark);
+    font-weight: 700;
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(108, 150, 214, 0.1);
+}
+
+.subtitle {
+    color: var(--color-dark-gray);
+    font-size: 1.2rem;
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+/* Tarjetas */
+.search-card {
+    background: var(--gradient-card);
+    border: none;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-medium);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
+    transition: var(--transition-smooth);
+}
+
+.search-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-strong);
+}
+
+.search-card .card-header {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+.search-card .card-body {
+    padding: 2rem;
+}
+
+/* Formularios */
+.form-label {
+    color: var(--color-primary-dark);
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.form-control {
+    border: 2px solid var(--color-light-gray);
+    border-radius: var(--border-radius-md);
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    transition: var(--transition-smooth);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(108, 150, 214, 0.25);
+    background: var(--color-white);
+}
+
+.form-control.is-invalid {
+    border-color: var(--color-danger);
+}
+
+.input-group-text {
+    background: var(--color-light-gray);
+    border: 2px solid var(--color-light-gray);
+    color: var(--color-primary);
+}
+
+.form-text {
+    color: var(--color-dark-gray);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.invalid-feedback {
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Botones */
+.btn {
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    transition: var(--transition-bounce);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn * {
+    position: relative;
+    z-index: 1;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--color-success) 0%, #7fb069 100%);
+    color: white;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    background: linear-gradient(135deg, #7fb069 0%, var(--color-success) 100%);
+    color: white;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-secondary {
+    border: 2px solid var(--color-medium-gray);
+    color: var(--color-dark-gray);
+    background: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--color-medium-gray);
+    color: white;
+}
+
+.btn-search, .btn-new-search {
+    font-size: 1.1rem;
+    padding: 1rem 2rem;
+    min-height: 60px;
+}
+
+/* Alertas de mensajes */
+.alert {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Códigos de mensaje con colores específicos */
+.mensaje-1 {
+    background: linear-gradient(135deg, rgba(144, 198, 149, 0.2) 0%, rgba(144, 198, 149, 0.1) 100%);
+    border-left: 5px solid var(--color-success);
+    color: #2d5a31;
+}
+
+.mensaje-2 {
+    background: linear-gradient(135deg, rgba(244, 194, 167, 0.2) 0%, rgba(244, 194, 167, 0.1) 100%);
+    border-left: 5px solid var(--color-warning);
+    color: #8b4513;
+}
+
+.mensaje-3 {
+    background: linear-gradient(135deg, rgba(133, 209, 217, 0.2) 0%, rgba(133, 209, 217, 0.1) 100%);
+    border-left: 5px solid var(--color-info);
+    color: #155e63;
+}
+
+.mensaje-4, .mensaje-5 {
+    background: linear-gradient(135deg, rgba(244, 194, 167, 0.3) 0%, rgba(244, 194, 167, 0.1) 100%);
+    border-left: 5px solid #fd7e14;
+    color: #8b4513;
+}
+
+.mensaje-6 {
+    background: linear-gradient(135deg, rgba(244, 167, 167, 0.2) 0%, rgba(244, 167, 167, 0.1) 100%);
+    border-left: 5px solid var(--color-danger);
+    color: #721c24;
+}
+
+.mensaje-7 {
+    background: linear-gradient(135deg, rgba(32, 201, 151, 0.2) 0%, rgba(32, 201, 151, 0.1) 100%);
+    border-left: 5px solid #20c997;
+    color: #0a3622;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.bounce-in {
+    animation: bounceIn 0.8s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Footer */
+.footer-custom {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(108, 150, 214, 0.1);
+    padding: 2rem 0;
+    margin-top: auto;
+}
+
+/* Toast personalizado */
+.toast {
+    background: var(--gradient-card);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-medium);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.toast-header {
+    background: var(--color-primary);
+    color: white;
+    border-bottom: none;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 1.8rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .search-card .card-header,
+    .search-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .btn-search, .btn-new-search {
+        font-size: 1rem;
+        padding: 0.8rem 1.5rem;
+        min-height: 50px;
+    }
+    
+    .logo-img {
+        max-width: 140px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .main-title {
+        font-size: 1.5rem;
+    }
+    
+    .search-card .card-header,
+    .search-card .card-body {
+        padding: 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .alert {
+        padding: 1rem;
+    }
+    
+    .logo-img {
+        max-width: 120px;
+    }
+}
+
+/* Estados de focus mejorados para accesibilidad */
+.btn:focus,
+.form-control:focus {
+    outline: 3px solid rgba(108, 150, 214, 0.3);
+    outline-offset: 2px;
+}
+
+/* Mejoras de contraste para texto */
+strong {
+    color: var(--color-primary-dark);
+}
+
+/* Spinner personalizado */
+.spinner-border-custom {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-width: 2px;
+    border-color: var(--color-primary);
+    border-right-color: transparent;
+}
+
+/* Estados hover mejorados */
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.form-control:hover:not(:focus) {
+    border-color: var(--color-primary-light);
+}
+
+/* Scrollbar personalizada para webkit */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-light-gray);
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
+}
+
+/* Utilities adicionales */
+.text-primary-custom {
+    color: var(--color-primary) !important;
+}
+
+.bg-primary-custom {
+    background-color: var(--color-primary) !important;
+}
+
+.shadow-custom {
+    box-shadow: var(--shadow-medium) !important;
+}
+
+/* Loading states */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn-loading .btn-text {
+    visibility: hidden;
+}
+
+.btn-loading .spinner-border {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

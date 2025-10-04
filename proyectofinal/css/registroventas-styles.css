@@ -1,0 +1,631 @@
+/* =================================================================
+   REGISTRO VENTAS - ESTILOS EXTERNOS
+   Codificación: UTF-8mb4
+   Responsive Design con colores empresariales suaves
+   ================================================================= */
+
+/* Variables CSS para colores empresariales suaves */
+:root {
+    /* Colores primarios empresariales */
+    --primary-blue: #4a90e2;
+    --primary-blue-light: #6ba3e8;
+    --primary-blue-dark: #357abd;
+    
+    /* Colores secundarios suaves */
+    --soft-green: #7fb069;
+    --soft-green-light: #95c285;
+    --soft-green-dark: #6a9454;
+    
+    /* Colores neutros empresariales */
+    --light-gray: #f8f9fa;
+    --medium-gray: #e9ecef;
+    --dark-gray: #6c757d;
+    --white: #ffffff;
+    
+    /* Colores de estado suaves */
+    --success-soft: #d4edda;
+    --success-border: #c3e6cb;
+    --warning-soft: #fff3cd;
+    --warning-border: #ffeaa7;
+    --danger-soft: #f8d7da;
+    --danger-border: #f5c6cb;
+    --info-soft: #d1ecf1;
+    --info-border: #bee5eb;
+    
+    /* Sombras suaves */
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-strong: 0 6px 20px rgba(0, 0, 0, 0.15);
+    
+    /* Gradientes empresariales */
+    --gradient-primary: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    --gradient-success: linear-gradient(135deg, #7fb069 0%, #6a9454 100%);
+    --gradient-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Reset y configuración base */
+* {
+    box-sizing: border-box;
+}
+
+body { 
+    background-color: var(--light-gray);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Barra de información del usuario */
+.user-info-bar {
+    background: var(--gradient-header);
+    color: var(--white);
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-medium);
+    transition: all 0.3s ease;
+}
+
+.user-info-bar:hover {
+    box-shadow: var(--shadow-strong);
+    transform: translateY(-2px);
+}
+
+.user-welcome {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--white);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.user-details h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.user-role {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+}
+
+.datetime-info {
+    text-align: right;
+}
+
+.current-datetime {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.current-time {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.full-date {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* Botones personalizados */
+.btn-custom { 
+    background: var(--gradient-primary);
+    border: none; 
+    color: var(--white);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-custom:hover { 
+    background: linear-gradient(135deg, #357abd 0%, #4a90e2 100%);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.btn-back-modules {
+    background: var(--gradient-success);
+    border: none;
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.btn-back-modules:hover {
+    background: linear-gradient(135deg, #6a9454 0%, #7fb069 100%);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+/* Formulario de venta */
+.formulario-venta { 
+    display: none; 
+    transition: all 0.5s ease-in-out; 
+}
+
+.formulario-venta.mostrar { 
+    display: block; 
+    animation: fadeInUp 0.5s ease-in-out; 
+}
+
+@keyframes fadeInUp { 
+    from { 
+        opacity: 0; 
+        transform: translateY(-20px); 
+    } 
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    } 
+}
+
+/* Contenedor de alertas */
+#alert-container { 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    z-index: 1060; 
+    min-width: 320px; 
+    max-width: 400px;
+}
+
+/* Estilos de tabla responsiva */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+}
+
+.table-responsive .btn { 
+    margin: 0 2px; 
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.table-responsive .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+}
+
+/* Container del checkbox */
+.checkbox-container { 
+    background: var(--info-soft);
+    padding: 1.25rem; 
+    border-radius: 10px; 
+    border-left: 4px solid var(--primary-blue);
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s ease;
+}
+
+.checkbox-container:hover {
+    background: #c7e6f0;
+    box-shadow: var(--shadow-medium);
+}
+
+/* Botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Cards mejoradas */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: var(--white);
+    border-bottom: 1px solid var(--medium-gray);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+}
+
+.card-header.bg-success {
+    background: var(--gradient-success) !important;
+    color: var(--white);
+}
+
+.card-header.bg-primary {
+    background: var(--gradient-primary) !important;
+    color: var(--white);
+}
+
+.card-header.bg-warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
+    color: var(--white);
+}
+
+/* Fieldsets mejorados */
+fieldset {
+    border: 2px solid var(--medium-gray) !important;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    transition: all 0.3s ease;
+}
+
+fieldset:hover {
+    border-color: var(--primary-blue-light) !important;
+    box-shadow: var(--shadow-soft);
+}
+
+fieldset legend {
+    background: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 2px solid var(--medium-gray);
+    margin-bottom: 0;
+}
+
+fieldset legend.text-success {
+    color: var(--soft-green-dark) !important;
+    border-color: var(--soft-green);
+}
+
+fieldset legend.text-primary {
+    color: var(--primary-blue-dark) !important;
+    border-color: var(--primary-blue);
+}
+
+/* Inputs mejorados */
+.form-control, .form-select {
+    border: 1px solid var(--medium-gray);
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+
+.form-control:hover, .form-select:hover {
+    border-color: var(--primary-blue-light);
+}
+
+/* Labels mejorados */
+.form-label {
+    font-weight: 500;
+    color: var(--dark-gray);
+    margin-bottom: 0.5rem;
+}
+
+.form-label.fw-bold {
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+/* Badges mejorados */
+.badge {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.badge.bg-primary {
+    background: var(--primary-blue) !important;
+}
+
+.badge.bg-info {
+    background: #17a2b8 !important;
+}
+
+/* Estadísticas mejoradas */
+.bg-primary.bg-opacity-75 {
+    background: var(--primary-blue) !important;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.bg-info.bg-opacity-75 {
+    background: #17a2b8 !important;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.bg-warning {
+    background: #f39c12 !important;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.bg-success {
+    background: var(--soft-green) !important;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+/* Hover effects para estadísticas */
+.bg-primary.bg-opacity-75:hover,
+.bg-info.bg-opacity-75:hover,
+.bg-warning:hover,
+.bg-success:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-medium);
+}
+
+/* Modal mejorado */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-strong);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--medium-gray);
+    border-radius: 12px 12px 0 0;
+    padding: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--medium-gray);
+    padding: 1.25rem;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Tabla mejorada */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-dark {
+    background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(74, 144, 226, 0.05);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Spinner mejorado */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.1em;
+}
+
+/* Switch mejorado */
+.form-check-input:checked {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN - MEDIA QUERIES
+   ================================================================= */
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+    .user-info-bar {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .datetime-info {
+        text-align: center;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    fieldset {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    #alert-container {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .user-info-bar {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .datetime-info {
+        text-align: center;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+    
+    .modal-dialog {
+        max-width: 90%;
+        margin: 1rem auto;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .modal-dialog {
+        max-width: 85%;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .user-info-bar {
+        padding: 1.5rem 2rem;
+    }
+    
+    .container-fluid {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container-fluid {
+        max-width: 1400px;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    fieldset {
+        padding: 1.5rem;
+    }
+}
+
+/* =================================================================
+   UTILIDADES ADICIONALES
+   ================================================================= */
+
+/* Animaciones suaves */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease-in-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estados de carga */
+.loading {
+    pointer-events: none;
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* Mejoras de accesibilidad */
+.visually-hidden-focusable:not(:focus):not(:focus-within) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Focus mejorado para accesibilidad */
+*:focus {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .user-info-bar,
+    .action-buttons,
+    .btn,
+    #alert-container {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    
+    body {
+        background: white;
+    }
+}
