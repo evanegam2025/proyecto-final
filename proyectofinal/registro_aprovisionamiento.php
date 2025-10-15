@@ -240,6 +240,8 @@ if (isset($_GET['logout'])) {
                             </li>
                             <li class="list-group-item"><strong>Cédula:</strong> <?php echo htmlspecialchars($venta_encontrada['cedula'], ENT_QUOTES, 'UTF-8'); ?></li>
                             <li class="list-group-item"><strong>Nombre Cliente:</strong> <?php echo htmlspecialchars($venta_encontrada['nombre'], ENT_QUOTES, 'UTF-8'); ?></li>
+                            <li class="list-group-item"><strong>Tecnología:</strong> <?php echo htmlspecialchars($venta_encontrada['tecnologia'] ?? 'No especificada', ENT_QUOTES, 'UTF-8'); ?></li>
+                            <li class="list-group-item"><strong>Plan:</strong> <?php echo htmlspecialchars($venta_encontrada['plan'] ?? 'No especificado', ENT_QUOTES, 'UTF-8'); ?></li>
                         </ul>
                     </div>
                 </div>
@@ -258,7 +260,30 @@ if (isset($_GET['logout'])) {
                         <div id="detallesAgendamientoContainer" style="display:none;">
                             <ul class="list-group">
                                 <li class="list-group-item"><strong>ID Agendamiento:</strong> <?php echo htmlspecialchars($agendamiento_encontrado['id'], ENT_QUOTES, 'UTF-8'); ?></li>
-                                <li class="list-group-item"><strong>Técnico Asignado:</strong> <?php echo htmlspecialchars($agendamiento_encontrado['tecnico_asignado'], ENT_QUOTES, 'UTF-8'); ?></li>
+                                <li class="list-group-item"><strong>Fecha Visita Programada:</strong> 
+                                    <?php 
+                                    if (!empty($agendamiento_encontrado['fecha_visita']) && $agendamiento_encontrado['fecha_visita'] != '0000-00-00') {
+                                        echo formatearFecha($agendamiento_encontrado['fecha_visita']);
+                                        if (!empty($agendamiento_encontrado['franja_visita'])) {
+                                            echo ' - ' . htmlspecialchars($agendamiento_encontrado['franja_visita'], ENT_QUOTES, 'UTF-8');
+                                        }
+                                    } else {
+                                        echo 'No programada';
+                                    }
+                                    ?>
+                                </li>
+                                <li class="list-group-item"><strong>Técnico Asignado:</strong> <?php echo htmlspecialchars($agendamiento_encontrado['tecnico_asignado'] ?? 'No asignado', ENT_QUOTES, 'UTF-8'); ?></li>
+                                <li class="list-group-item"><strong>Estado Visita:</strong> 
+                                    <span class="badge <?php 
+                                        echo match($agendamiento_encontrado['estado_visita'] ?? 'NO Asignado') {
+                                            'AGENDADO' => 'bg-success',
+                                            'CANCELADO' => 'bg-danger',
+                                            default => 'bg-warning'
+                                        };
+                                    ?>">
+                                        <?php echo htmlspecialchars($agendamiento_encontrado['estado_visita'] ?? 'NO Asignado', ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -295,55 +320,56 @@ if (isset($_GET['logout'])) {
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="tipo_radio" class="form-label fw-bold">Tipo Radio Instalado</label>
-                                        <input type="text" class="form-control" id="tipo_radio" name="tipo_radio" placeholder="Ej: PowerBeam M5">
+                                        <input type="text" class="form-control" id="tipo_radio" name="tipo_radio" placeholder="Ej: PowerBeam M5" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="mac_serial_radio" class="form-label fw-bold">MAC y Serial del Radio</label>
-                                        <input type="text" class="form-control" id="mac_serial_radio" name="mac_serial_radio" placeholder="MAC/Serial">
+                                        <input type="text" class="form-control" id="mac_serial_radio" name="mac_serial_radio" placeholder="MAC/Serial" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="tipo_router_onu" class="form-label fw-bold">Tipo Router/ONU</label>
-                                        <input type="text" class="form-control" id="tipo_router_onu" name="tipo_router_onu" placeholder="Ej: TP-Link Archer C6">
+                                        <input type="text" class="form-control" id="tipo_router_onu" name="tipo_router_onu" placeholder="Ej: TP-Link Archer C6" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="mac_serial_router" class="form-label fw-bold">MAC y Serial Router/ONU</label>
-                                        <input type="text" class="form-control" id="mac_serial_router" name="mac_serial_router" placeholder="MAC/Serial">
+                                        <input type="text" class="form-control" id="mac_serial_router" name="mac_serial_router" placeholder="MAC/Serial" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="ip_navegacion" class="form-label fw-bold">IP de Navegación</label>
-                                        <input type="text" class="form-control" id="ip_navegacion" name="ip_navegacion" placeholder="Ej: 192.168.10.25" >
+                                        <input type="text" class="form-control" id="ip_navegacion" name="ip_navegacion" placeholder="Ej: 192.168.10.25" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="ip_gestion" class="form-label fw-bold">IP de Gestión</label>
-                                        <input type="text" class="form-control" id="ip_gestion" name="ip_gestion" placeholder="Ej: 10.10.1.50">
+                                        <input type="text" class="form-control" id="ip_gestion" name="ip_gestion" placeholder="Ej: 10.10.1.50" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="metros_cable" class="form-label fw-bold">Metros Cable Usado</label>
-                                        <input type="number" class="form-control" id="metros_cable" name="metros_cable" placeholder="Ej: 25">
+                                        <input type="number" class="form-control" id="metros_cable" name="metros_cable" placeholder="Ej: 25" disabled>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="tipo_cable" class="form-label fw-bold">Tipo Cable Usado</label>
-                                        <select class="form-select" id="tipo_cable" name="tipo_cable">
+                                        <select class="form-select" id="tipo_cable" name="tipo_cable" disabled>
                                             <option value="">-- Seleccione --</option>
                                             <option value="DROP">DROP</option>
                                             <option value="UTP">UTP</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="estado_aprovisionamiento" class="form-label fw-bold">Estado *</label>
+                                        <select class="form-select" id="estado_aprovisionamiento" name="estado_aprovisionamiento" required>
+                                            <option value="PENDIENTE">PENDIENTE</option>
+                                            <option value="REPROGRAMAR">REPROGRAMAR</option>
+                                            <option value="CANCELADO">CANCELADO</option>
+                                            <option value="CUMPLIDO">CUMPLIDO</option>
                                         </select>
                                     </div>
                                     <div class="col-12">
                                         <label for="notas_aprovisionamiento" class="form-label fw-bold">Notas Aprovisionamiento *</label>
                                         <textarea class="form-control" id="notas_aprovisionamiento" name="notas_aprovisionamiento" rows="3" placeholder="Detalles de la instalación, materiales adicionales, etc." required></textarea>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="estado_aprovisionamiento" class="form-label fw-bold">Estado *</label>
-                                        <select class="form-select" id="estado_aprovisionamiento" name="estado_aprovisionamiento" required>
-                                            <option value="CUMPLIDO">CUMPLIDO</option>
-                                            <option value="PENDIENTE">PENDIENTE</option>
-                                            <option value="REPROGRAMAR">REPROGRAMAR</option>
-                                            <option value="CANCELADO">CANCELADO</option>
-                                        </select>
-                                    </div>
                                 </div>
                                 <div class="col-12 mt-4 text-end">
+                                    <button type="button" class="btn btn-secondary btn-lg me-2" onclick="limpiarFormularioAprovisionamiento()"><i class="bi bi-eraser me-1"></i> Limpiar Formulario</button>
                                     <button type="submit" class="btn btn-custom btn-lg"><i class="bi bi-save me-1"></i> Guardar Aprovisionamiento</button>
                                 </div>
                             </form>
@@ -452,48 +478,45 @@ if (isset($_GET['logout'])) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                     <form id="formEditarAprovisionamiento">
+                    <form id="formEditarAprovisionamiento">
                         <input type="hidden" name="id_aprovisionamiento_edit" value="<?php echo $aprovisionamiento_encontrado['id']; ?>">
                         <input type="hidden" name="cedula_original" value="<?php echo $aprovisionamiento_encontrado['cedula_cliente']; ?>">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Tipo Radio</label>
-                                <input type="text" class="form-control" name="tipo_radio_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['tipo_radio'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="text" class="form-control" name="tipo_radio_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['tipo_radio'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">MAC/Serial Radio</label>
-                                <input type="text" class="form-control" name="mac_serial_radio_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['mac_serial_radio'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="text" class="form-control" name="mac_serial_radio_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['mac_serial_radio'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo Router/ONU *</label>
-                                <input type="text" class="form-control" name="tipo_router_onu_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['tipo_router_onu'], ENT_QUOTES, 'UTF-8'); ?>" required>
+                                <label class="form-label fw-bold">Tipo Router/ONU</label>
+                                <input type="text" class="form-control" name="tipo_router_onu_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['tipo_router_onu'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">MAC/Serial Router *</label>
-                                <input type="text" class="form-control" name="mac_serial_router_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['mac_serial_router'], ENT_QUOTES, 'UTF-8'); ?>" required>
+                                <label class="form-label fw-bold">MAC/Serial Router</label>
+                                <input type="text" class="form-control" name="mac_serial_router_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['mac_serial_router'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">IP Navegación *</label>
-                                <input type="text" class="form-control" name="ip_navegacion_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['ip_navegacion'], ENT_QUOTES, 'UTF-8'); ?>" required>
+                                <label class="form-label fw-bold">IP Navegación</label>
+                                <input type="text" class="form-control" name="ip_navegacion_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['ip_navegacion'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">IP Gestión</label>
-                                <input type="text" class="form-control" name="ip_gestion_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['ip_gestion'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="text" class="form-control" name="ip_gestion_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['ip_gestion'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Metros Cable *</label>
-                                <input type="number" class="form-control" name="metros_cable_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['metros_cable'], ENT_QUOTES, 'UTF-8'); ?>" required>
+                                <label class="form-label fw-bold">Metros Cable</label>
+                                <input type="number" class="form-control" name="metros_cable_edit" value="<?php echo htmlspecialchars($aprovisionamiento_encontrado['metros_cable'], ENT_QUOTES, 'UTF-8'); ?>" disabled>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Tipo Cable</label>
-                                <select class="form-select" name="tipo_cable_edit">
+                                <select class="form-select" name="tipo_cable_edit" disabled>
+                                    <option value="">-- Seleccione --</option>
                                     <option value="DROP" <?php if ($aprovisionamiento_encontrado['tipo_cable'] == 'DROP') echo 'selected'; ?>>DROP</option>
                                     <option value="UTP" <?php if ($aprovisionamiento_encontrado['tipo_cable'] == 'UTP') echo 'selected'; ?>>UTP</option>
                                 </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Notas *</label>
-                                <textarea class="form-control" name="notas_aprovisionamiento_edit" rows="3" required><?php echo htmlspecialchars($aprovisionamiento_encontrado['notas_aprovisionamiento'], ENT_QUOTES, 'UTF-8'); ?></textarea>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Estado *</label>
@@ -503,6 +526,10 @@ if (isset($_GET['logout'])) {
                                     <option value="REPROGRAMAR" <?php if ($aprovisionamiento_encontrado['estado_aprovisionamiento'] == 'REPROGRAMAR') echo 'selected'; ?>>REPROGRAMAR</option>
                                     <option value="CANCELADO" <?php if ($aprovisionamiento_encontrado['estado_aprovisionamiento'] == 'CANCELADO') echo 'selected'; ?>>CANCELADO</option>
                                 </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Notas *</label>
+                                <textarea class="form-control" name="notas_aprovisionamiento_edit" rows="3" required><?php echo htmlspecialchars($aprovisionamiento_encontrado['notas_aprovisionamiento'], ENT_QUOTES, 'UTF-8'); ?></textarea>
                             </div>
                         </div>
                         <div class="modal-footer mt-4">

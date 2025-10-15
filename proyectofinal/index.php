@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="system-info text-center mt-4">
                         <small class="text-muted">
                             <i class="bi bi-shield-check"></i> 
-                            Conexión segura • Tiempo de sesión: 10 minutos
+                            Conexión segura • 
                         </small>
                     </div>
                 </div>

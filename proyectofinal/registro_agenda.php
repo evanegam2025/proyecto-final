@@ -24,6 +24,7 @@ require_once 'api/api_registroagenda.php';
                     <span class="navbar-text me-3">
                         Bienvenido, <?php echo htmlspecialchars($nombre_usuario); ?>
                     </span>
+                    <a href="modulos.php" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver a Módulos</a>
                     <a href="?logout=1" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
                     </a>
@@ -123,20 +124,20 @@ require_once 'api/api_registroagenda.php';
                                        value="<?php echo htmlspecialchars($venta_encontrada['nombre']) . ' - C.C. ' . htmlspecialchars($venta_encontrada['cedula']); ?>" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label for="fecha_visita" class="form-label fw-bold">Fecha de la Visita *</label>
-                                <input type="date" class="form-control" id="fecha_visita" name="fecha_visita" required>
+                                <label for="fecha_visita" class="form-label fw-bold">Fecha de la Visita</label>
+                                <input type="date" class="form-control" id="fecha_visita" name="fecha_visita">
                             </div>
                             <div class="col-md-6">
-                                <label for="franja_visita" class="form-label fw-bold">Franja de Visita *</label>
-                                <select class="form-select" id="franja_visita" name="franja_visita" required>
+                                <label for="franja_visita" class="form-label fw-bold">Franja de Visita</label>
+                                <select class="form-select" id="franja_visita" name="franja_visita">
                                     <option value="" disabled selected>Seleccione una franja</option>
                                     <option value="AM">AM (Mañana)</option>
                                     <option value="PM">PM (Tarde)</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label for="tecnico_asignado" class="form-label fw-bold">Técnico Asignado *</label>
-                                <select class="form-select" id="tecnico_asignado" name="tecnico_asignado" required>
+                                <label for="tecnico_asignado" class="form-label fw-bold">Técnico Asignado</label>
+                                <select class="form-select" id="tecnico_asignado" name="tecnico_asignado">
                                     <option value="" disabled selected>Seleccione un técnico</option>
                                     <option value="Juan Diego Jaramillo">Juan Diego Jaramillo</option>
                                     <option value="Juan Sebastian Fierro">Juan Sebastian Fierro</option>
@@ -149,15 +150,13 @@ require_once 'api/api_registroagenda.php';
                                 <select class="form-select" id="estado_visita" name="estado_visita" required>
                                     <option value="NO Asignado">NO Asignado</option>
                                     <option value="AGENDADO">AGENDADO</option>
-                                    <option value="REPROGRAMAR">REPROGRAMAR</option>
-                                    <option value="PENDIENTE">PENDIENTE</option>
                                     <option value="CANCELADO">CANCELADO</option>
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label for="notas" class="form-label fw-bold">Notas del Agendamiento</label>
+                                <label for="notas" class="form-label fw-bold">Notas del Agendamiento *</label>
                                 <textarea class="form-control" id="notas" name="notas" rows="3" 
-                                          placeholder="Información adicional..."></textarea>
+                                          placeholder="Información adicional..." required></textarea>
                             </div>
                             <div class="col-12 mt-4 text-end">
                                 <button type="submit" name="guardar_agendamiento" class="btn btn-custom btn-lg">

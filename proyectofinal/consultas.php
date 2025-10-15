@@ -23,7 +23,7 @@ if (!testDBConnection()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema de Ventas e Instalaciones - Consulta de Cédulas">
-    <meta name="author" content="SVI System">
+    <meta name="author" content="SVI Sistema de Ventas e Instalaciones">
     
     <title>Sistema de Consulta SVI</title>
     
@@ -54,7 +54,7 @@ if (!testDBConnection()) {
         <div class="container">
             <a class="navbar-brand fw-bold text-primary" href="#">
                 <i class="bi bi-gear-fill me-2"></i>
-                SVI System
+                SVI SISTEMAS DE CONSULTAS
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
