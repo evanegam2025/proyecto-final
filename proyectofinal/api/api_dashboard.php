@@ -1,381 +1,268 @@
 <?php
-// Limpiar cualquier output previo
-while (ob_get_level()) {
-    ob_end_clean();
-}
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('default_charset', 'UTF-8');
+mb_internal_encoding('UTF-8');
 
-// Configurar headers JSON inmediatamente
-header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-cache');
+header('Content-Type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Función para enviar respuesta JSON y terminar
-function sendJSON($success, $data = null, $message = '') {
-    $response = [
+session_start();
+
+require_once '../conex_bd.php';
+
+function enviarRespuesta($success, $data = null, $message = '', $code = 200) {
+    http_response_code($code);
+    $response = array(
         'success' => $success,
+        'data' => $data,
         'message' => $message,
-        'timestamp' => date('c')
-    ];
-    
-    if ($data !== null) {
-        $response['data'] = $data;
-    }
-    
-    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        'timestamp' => date('Y-m-d H:i:s')
+    );
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
     exit;
 }
 
-// Función para enviar archivo Excel
-function sendExcelFile($filename, $content) {
-    // Limpiar cualquier output previo
-    while (ob_get_level()) {
-        ob_end_clean();
-    }
-    
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Cache-Control: max-age=0');
-    header('Cache-Control: max-age=1');
-    header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-    header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-    header('Cache-Control: cache, must-revalidate');
-    header('Pragma: public');
-    
-    echo $content;
-    exit;
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
+    enviarRespuesta(false, null, 'No autorizado', 401);
 }
 
-// Capturar todos los errores
 try {
-    // Verificar método POST
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJSON(false, null, 'Método no permitido');
-    }
-
-    // Obtener datos JSON
-    $input = file_get_contents('php://input');
-    if (empty($input)) {
-        sendJSON(false, null, 'No se recibieron datos');
-    }
-
-    $data = json_decode($input, true);
-    if ($data === null) {
-        sendJSON(false, null, 'JSON inválido');
-    }
-
-    $action = $data['action'] ?? '';
-
-    // Iniciar sesión solo si es necesario
-    session_start();
-
-    // Incluir conexión a BD
-    require_once '../conex_bd.php';
-    $conn = getDBConnection();
-
-    switch ($action) {
-        case 'ping':
-            sendJSON(true, ['status' => 'ok'], 'API funcionando');
+    $pdo = getDBConnection();
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+    
+    $periodo = isset($_GET['periodo']) ? $_GET['periodo'] : 'mes_actual';
+    $usuario_cedula = isset($_SESSION['user_cedula']) ? $_SESSION['user_cedula'] : '';
+    $usuario_modulo = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '';
+    
+    $fecha_inicio = '';
+    $fecha_fin = date('Y-m-d');
+    
+    switch ($periodo) {
+        case 'mes_actual':
+            $fecha_inicio = date('Y-m-01');
             break;
-
-        case 'check_permissions':
-            try {
-                // Obtener cédula del usuario de la sesión
-                $cedula_usuario = $_SESSION['cedula'] ?? null;
-                
-                if (!$cedula_usuario) {
-                    // Si no hay sesión, devolver permisos vacíos
-                    sendJSON(true, ['permissions' => []]);
-                    break;
-                }
-                
-                // Consultar permisos del usuario usando el procedimiento almacenado
-                $stmt = $conn->prepare("CALL ObtenerPermisosUsuario(?)");
-                $stmt->execute([$cedula_usuario]);
-                $permisos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                sendJSON(true, ['permissions' => $permisos]);
-                
-            } catch (Exception $e) {
-                // En caso de error, devolver permisos vacíos
-                sendJSON(true, ['permissions' => []]);
-            }
+        case 'mes_anterior':
+            $fecha_inicio = date('Y-m-01', strtotime('-1 month'));
+            $fecha_fin = date('Y-m-t', strtotime('-1 month'));
             break;
-
-        case 'get_municipalities':
-            try {
-                $stmt = $conn->prepare("SELECT DISTINCT municipio FROM ventas WHERE municipio IS NOT NULL ORDER BY municipio");
-                $stmt->execute();
-                $municipalities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                sendJSON(true, ['municipalities' => $municipalities]);
-            } catch (Exception $e) {
-                sendJSON(true, ['municipalities' => []]);
-            }
+        case 'ultimos_30':
+            $fecha_inicio = date('Y-m-d', strtotime('-30 days'));
             break;
-
-        case 'get_dashboard_data':
-            try {
-                $filters = $data['filters'] ?? [];
-                
-                // Construir WHERE básico
-                $whereClause = '';
-                $params = [];
-                
-                // Solo filtro básico de fechas si se especifica
-                if (!empty($filters['period'])) {
-                    switch ($filters['period']) {
-                        case 'current_month':
-                            $whereClause = "WHERE DATE_FORMAT(fecha, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
-                            break;
-                        case 'current_year':
-                            $whereClause = "WHERE YEAR(fecha) = YEAR(NOW())";
-                            break;
-                        case 'last_month':
-                            $whereClause = "WHERE DATE_FORMAT(fecha, '%Y-%m') = DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m')";
-                            break;
-                        case 'last_year':
-                            $whereClause = "WHERE YEAR(fecha) = YEAR(DATE_SUB(NOW(), INTERVAL 1 YEAR))";
-                            break;
-                    }
-                }
-                
-                // Filtro por municipio
-                if (!empty($filters['municipality']) && $filters['municipality'] !== 'all') {
-                    $whereClause .= empty($whereClause) ? "WHERE " : " AND ";
-                    $whereClause .= "municipio = ?";
-                    $params[] = $filters['municipality'];
-                }
-                
-                // Filtro por tecnología
-                if (!empty($filters['technology']) && $filters['technology'] !== 'all') {
-                    $whereClause .= empty($whereClause) ? "WHERE " : " AND ";
-                    $whereClause .= "tecnologia = ?";
-                    $params[] = $filters['technology'];
-                }
-                
-                // Obtener total de ventas
-                $stmt = $conn->prepare("SELECT COUNT(*) as total FROM ventas " . $whereClause);
-                $stmt->execute($params);
-                $totalVentas = (int)$stmt->fetch()['total'];
-                
-                // Obtener ventas por mes
-                $stmt = $conn->prepare("SELECT COUNT(*) as total FROM ventas WHERE DATE_FORMAT(fecha, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')");
-                $stmt->execute();
-                $ventasActual = (int)$stmt->fetch()['total'];
-                
-                $stmt = $conn->prepare("SELECT COUNT(*) as total FROM ventas WHERE DATE_FORMAT(fecha, '%Y-%m') = DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m')");
-                $stmt->execute();
-                $ventasAnterior = (int)$stmt->fetch()['total'];
-                
-                // Tecnologías
-                $stmt = $conn->prepare("SELECT COALESCE(tecnologia, 'No especificada') as tecnologia, COUNT(*) as cantidad FROM ventas " . $whereClause . " GROUP BY tecnologia ORDER BY cantidad DESC");
-                $stmt->execute($params);
-                $tecnologias = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                // Datos de agendamiento
-                $stmt = $conn->prepare("SELECT COUNT(*) as total FROM agendamiento");
-                $stmt->execute();
-                $totalAgendadas = (int)$stmt->fetch()['total'];
-                
-                $stmt = $conn->prepare("SELECT COUNT(*) as pendientes FROM agendamiento WHERE estado_visita IN ('NO Asignado', 'PENDIENTE')");
-                $stmt->execute();
-                $agendamientoPendientes = (int)$stmt->fetch()['pendientes'];
-                
-                $stmt = $conn->prepare("SELECT COUNT(*) as completadas FROM agendamiento WHERE estado_visita = 'AGENDADO'");
-                $stmt->execute();
-                $agendamientoCompletadas = (int)$stmt->fetch()['completadas'];
-                
-                // Datos de aprovisionamiento
-                $stmt = $conn->prepare("SELECT COUNT(*) as total FROM aprovisionamiento WHERE estado_aprovisionamiento = 'CUMPLIDO'");
-                $stmt->execute();
-                $totalCumplidas = (int)$stmt->fetch()['total'];
-                
-                $stmt = $conn->prepare("SELECT COUNT(*) as pendientes FROM aprovisionamiento WHERE estado_aprovisionamiento IN ('NO ASIGNADO', 'PENDIENTE')");
-                $stmt->execute();
-                $aprovisionamientoPendientes = (int)$stmt->fetch()['pendientes'];
-                
-                $stmt = $conn->prepare("SELECT COUNT(*) as proceso FROM aprovisionamiento WHERE estado_aprovisionamiento IN ('AGENDADO')");
-                $stmt->execute();
-                $aprovisionamientoProceso = (int)$stmt->fetch()['proceso'];
-                
-                // Calcular efectividad
-                $efectividad = $totalVentas > 0 ? ($totalCumplidas / $totalVentas) * 100 : 0;
-                
-                $dashboardData = [
-                    'total_ventas' => $totalVentas,
-                    'total_agendadas' => $totalAgendadas,
-                    'total_cumplidas' => $totalCumplidas,
-                    'efectividad' => round($efectividad, 2),
-                    'ventas_mes_actual' => $ventasActual,
-                    'ventas_mes_anterior' => $ventasAnterior,
-                    'estados_ventas' => [
-                        ['estado' => 'VENDIDO', 'cantidad' => $totalVentas]
-                    ],
-                    'agendamiento_pendientes' => $agendamientoPendientes,
-                    'agendamiento_completadas' => $agendamientoCompletadas,
-                    'aprovisionamiento_pendientes' => $aprovisionamientoPendientes,
-                    'aprovisionamiento_proceso' => $aprovisionamientoProceso,
-                    'tecnologias' => $tecnologias
-                ];
-                
-                sendJSON(true, $dashboardData);
-                
-            } catch (Exception $e) {
-                // En caso de error, devolver datos vacíos
-                $emptyData = [
-                    'total_ventas' => 0,
-                    'total_agendadas' => 0,
-                    'total_cumplidas' => 0,
-                    'efectividad' => 0,
-                    'ventas_mes_actual' => 0,
-                    'ventas_mes_anterior' => 0,
-                    'estados_ventas' => [],
-                    'agendamiento_pendientes' => 0,
-                    'agendamiento_completadas' => 0,
-                    'aprovisionamiento_pendientes' => 0,
-                    'aprovisionamiento_proceso' => 0,
-                    'tecnologias' => []
-                ];
-                sendJSON(true, $emptyData);
-            }
+        case 'ultimos_90':
+            $fecha_inicio = date('Y-m-d', strtotime('-90 days'));
             break;
-
-        case 'export_dashboard':
-            try {
-                // Verificar permisos de exportación
-                $cedula_usuario = $_SESSION['cedula'] ?? null;
-                if (!$cedula_usuario) {
-                    sendJSON(false, null, 'Usuario no autenticado');
-                    break;
-                }
-                
-                // Verificar si el usuario tiene permisos para exportar
-                $stmt = $conn->prepare("
-                    SELECT COUNT(*) as tiene_permiso 
-                    FROM administrador a
-                    INNER JOIN modulo_permisos mp ON a.modulo = mp.modulo
-                    INNER JOIN permisos p ON mp.permiso_id = p.id
-                    WHERE a.cedula = ? AND p.nombre IN ('exportar_dashboard', 'dashboard', 'administrar_permisos')
-                ");
-                $stmt->execute([$cedula_usuario]);
-                $permisos = $stmt->fetch();
-                
-                if (!$permisos || $permisos['tiene_permiso'] == 0) {
-                    sendJSON(false, null, 'No tiene permisos para exportar dashboard');
-                    break;
-                }
-                
-                $filters = $data['filters'] ?? [];
-                
-                // Construir WHERE clause para filtros
-                $whereClause = '';
-                $params = [];
-                
-                if (!empty($filters['period'])) {
-                    switch ($filters['period']) {
-                        case 'current_month':
-                            $whereClause = "WHERE DATE_FORMAT(v.fecha, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
-                            break;
-                        case 'current_year':
-                            $whereClause = "WHERE YEAR(v.fecha) = YEAR(NOW())";
-                            break;
-                        case 'last_month':
-                            $whereClause = "WHERE DATE_FORMAT(v.fecha, '%Y-%m') = DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m')";
-                            break;
-                        case 'last_year':
-                            $whereClause = "WHERE YEAR(v.fecha) = YEAR(DATE_SUB(NOW(), INTERVAL 1 YEAR))";
-                            break;
-                    }
-                }
-                
-                if (!empty($filters['municipality']) && $filters['municipality'] !== 'all') {
-                    $whereClause .= empty($whereClause) ? "WHERE " : " AND ";
-                    $whereClause .= "v.municipio = ?";
-                    $params[] = $filters['municipality'];
-                }
-                
-                if (!empty($filters['technology']) && $filters['technology'] !== 'all') {
-                    $whereClause .= empty($whereClause) ? "WHERE " : " AND ";
-                    $whereClause .= "v.tecnologia = ?";
-                    $params[] = $filters['technology'];
-                }
-                
-                // Consultar datos completos para exportación
-                $query = "
-                    SELECT 
-                        v.id as 'ID Venta',
-                        DATE_FORMAT(v.fecha, '%d/%m/%Y %H:%i') as 'Fecha Venta',
-                        v.cedula as 'Cédula Cliente',
-                        v.nombre as 'Nombre Cliente',
-                        v.telefono1 as 'Teléfono 1',
-                        v.telefono2 as 'Teléfono 2',
-                        v.email as 'Email',
-                        v.municipio as 'Municipio',
-                        v.vereda as 'Vereda',
-                        v.coordenadas as 'Coordenadas',
-                        v.tecnologia as 'Tecnología',
-                        v.plan as 'Plan',
-                        v.vendedor_nombre as 'Vendedor',
-                        COALESCE(a.estado_visita, 'Sin Agendar') as 'Estado Agendamiento',
-                        COALESCE(DATE_FORMAT(a.fecha_visita, '%d/%m/%Y'), '') as 'Fecha Visita',
-                        COALESCE(a.tecnico_asignado, '') as 'Técnico Asignado',
-                        COALESCE(ap.estado_aprovisionamiento, 'Sin Aprovisionar') as 'Estado Aprovisionamiento',
-                        COALESCE(ap.tipo_router_onu, '') as 'Tipo Router/ONU',
-                        COALESCE(ap.ip_navegacion, '') as 'IP Navegación'
-                    FROM ventas v
-                    LEFT JOIN agendamiento a ON v.cedula = a.cedula_cliente
-                    LEFT JOIN aprovisionamiento ap ON v.cedula = ap.cedula_cliente
-                    $whereClause
-                    ORDER BY v.fecha DESC
-                ";
-                
-                $stmt = $conn->prepare($query);
-                $stmt->execute($params);
-                $ventas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                // Generar archivo Excel
-                $excel_content = generateExcelContent($ventas);
-                $filename = 'dashboard_ventas_' . date('Y-m-d_H-i-s') . '.xlsx';
-                
-                sendExcelFile($filename, $excel_content);
-                
-            } catch (Exception $e) {
-                sendJSON(false, null, 'Error al exportar dashboard: ' . $e->getMessage());
-            }
+        case 'anio_actual':
+            $fecha_inicio = date('Y-01-01');
             break;
-
         default:
-            sendJSON(false, null, 'Acción no válida: ' . $action);
+            $fecha_inicio = date('Y-m-01');
     }
-
+    
+    // Total ventas en el periodo
+    $sql_ventas = "SELECT COUNT(*) as total FROM ventas WHERE DATE(created_at) BETWEEN ? AND ?";
+    $stmt = $pdo->prepare($sql_ventas);
+    $stmt->execute(array($fecha_inicio, $fecha_fin));
+    $total_ventas = intval($stmt->fetch(PDO::FETCH_ASSOC)['total']);
+    
+    // Query optimizada que obtiene el estado prioritario por cedula
+    // Prioridad: Aprovisionamiento > Agendamiento > Venta (solo si no existe en los otros)
+    $sql_estados_unicos = "
+    SELECT 
+        v.cedula,
+        CASE 
+            WHEN ap.estado_aprovisionamiento IS NOT NULL THEN ap.estado_aprovisionamiento
+            WHEN ag.estado_visita IS NOT NULL THEN ag.estado_visita
+            ELSE 'SIN ASIGNAR'
+        END as estado_actual,
+        CASE 
+            WHEN ap.estado_aprovisionamiento IS NOT NULL THEN 'APROVISIONAMIENTO'
+            WHEN ag.estado_visita IS NOT NULL THEN 'AGENDAMIENTO'
+            ELSE 'VENTA'
+        END as modulo_actual
+    FROM ventas v
+    LEFT JOIN agendamiento ag ON v.cedula = ag.cedula_cliente
+    LEFT JOIN aprovisionamiento ap ON v.cedula = ap.cedula_cliente
+    WHERE DATE(v.created_at) BETWEEN ? AND ?
+    ";
+    
+    $stmt = $pdo->prepare($sql_estados_unicos);
+    $stmt->execute(array($fecha_inicio, $fecha_fin));
+    $estados_por_cedula = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Inicializar contadores
+    $total_agendados = 0;
+    $total_pendientes = 0;
+    $total_cumplidos = 0;
+    $total_cancelados = 0;
+    $total_reprogramar = 0;
+    $total_no_asignados = 0;
+    
+    // Contar estados unicos por cedula
+    foreach ($estados_por_cedula as $registro) {
+        $estado = mb_strtoupper(trim($registro['estado_actual']), 'UTF-8');
+        
+        switch ($estado) {
+            case 'AGENDADO':
+                $total_agendados++;
+                break;
+            case 'PENDIENTE':
+                $total_pendientes++;
+                break;
+            case 'CUMPLIDO':
+                $total_cumplidos++;
+                break;
+            case 'CANCELADO':
+                $total_cancelados++;
+                break;
+            case 'REPROGRAMAR':
+                $total_reprogramar++;
+                break;
+            case 'NO ASIGNADO':
+            case 'NO Asignado':
+            case 'SIN ASIGNAR':
+                $total_no_asignados++;
+                break;
+        }
+    }
+    
+    // Tecnologias
+    $sql_tecnologias = "SELECT tecnologia, COUNT(*) as total 
+                        FROM ventas 
+                        WHERE DATE(created_at) BETWEEN ? AND ? 
+                        GROUP BY tecnologia";
+    $stmt = $pdo->prepare($sql_tecnologias);
+    $stmt->execute(array($fecha_inicio, $fecha_fin));
+    $tecnologias_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $fibra_optica = 0;
+    $radio_enlace = 0;
+    $tecnologias_labels = array();
+    $tecnologias_values = array();
+    
+    foreach ($tecnologias_data as $tec) {
+        $tec_nombre = trim($tec['tecnologia']);
+        $total = intval($tec['total']);
+        
+        $tecnologias_labels[] = $tec_nombre;
+        $tecnologias_values[] = $total;
+        
+        if (mb_stripos($tec_nombre, 'Fibra', 0, 'UTF-8') !== false || 
+            mb_stripos($tec_nombre, 'ptica', 0, 'UTF-8') !== false) {
+            $fibra_optica += $total;
+        } elseif (mb_stripos($tec_nombre, 'Radio', 0, 'UTF-8') !== false) {
+            $radio_enlace += $total;
+        }
+    }
+    
+    // Planes
+    $sql_planes = "SELECT plan, COUNT(*) as total 
+                   FROM ventas 
+                   WHERE DATE(created_at) BETWEEN ? AND ? 
+                   GROUP BY plan 
+                   ORDER BY total DESC";
+    $stmt = $pdo->prepare($sql_planes);
+    $stmt->execute(array($fecha_inicio, $fecha_fin));
+    $planes_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $planes_labels = array();
+    $planes_values = array();
+    
+    foreach ($planes_data as $plan) {
+        $planes_labels[] = trim($plan['plan']);
+        $planes_values[] = intval($plan['total']);
+    }
+    
+    // Municipios
+    $sql_municipios = "SELECT municipio, COUNT(*) as total 
+                       FROM ventas 
+                       WHERE DATE(created_at) BETWEEN ? AND ? 
+                       GROUP BY municipio 
+                       ORDER BY total DESC 
+                       LIMIT 5";
+    $stmt = $pdo->prepare($sql_municipios);
+    $stmt->execute(array($fecha_inicio, $fecha_fin));
+    $municipios_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $municipios_labels = array();
+    $municipios_values = array();
+    
+    foreach ($municipios_data as $mun) {
+        $municipios_labels[] = trim($mun['municipio']);
+        $municipios_values[] = intval($mun['total']);
+    }
+    
+    // Info usuario
+    $info_usuario = array(
+        'nombre' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '',
+        'modulo' => $usuario_modulo,
+        'cedula' => $usuario_cedula
+    );
+    
+    // Porcentajes
+    $porcentaje_cumplidos = $total_ventas > 0 ? round(($total_cumplidos / $total_ventas) * 100, 1) : 0;
+    $porcentaje_pendientes = $total_ventas > 0 ? round(($total_pendientes / $total_ventas) * 100, 1) : 0;
+    
+    // Respuesta
+    $response_data = array(
+        'stats' => array(
+            'total_ventas' => $total_ventas,
+            'total_agendados' => $total_agendados,
+            'total_pendientes' => $total_pendientes,
+            'total_cumplidos' => $total_cumplidos,
+            'total_cancelados' => $total_cancelados,
+            'total_reprogramar' => $total_reprogramar,
+            'total_no_asignados' => $total_no_asignados,
+            'fibra_optica' => $fibra_optica,
+            'radio_enlace' => $radio_enlace,
+            'porcentaje_cumplidos' => $porcentaje_cumplidos,
+            'porcentaje_pendientes' => $porcentaje_pendientes
+        ),
+        'estados' => array(
+            'labels' => array('AGENDADO', 'PENDIENTE', 'CUMPLIDO', 'REPROGRAMAR', 'CANCELADO', 'NO ASIGNADO'),
+            'values' => array(
+                $total_agendados, 
+                $total_pendientes, 
+                $total_cumplidos, 
+                $total_reprogramar, 
+                $total_cancelados, 
+                $total_no_asignados
+            )
+        ),
+        'tecnologias' => array(
+            'labels' => $tecnologias_labels,
+            'values' => $tecnologias_values
+        ),
+        'planes' => array(
+            'labels' => $planes_labels,
+            'values' => $planes_values
+        ),
+        'municipios' => array(
+            'labels' => $municipios_labels,
+            'values' => $municipios_values
+        ),
+        'usuario' => $info_usuario,
+        'periodo' => array(
+            'tipo' => $periodo,
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_fin' => $fecha_fin
+        ),
+        'debug' => array(
+            'total_registros_procesados' => count($estados_por_cedula),
+            'charset' => 'UTF-8'
+        )
+    );
+    
+    enviarRespuesta(true, $response_data, 'Datos cargados correctamente', 200);
+    
+} catch (PDOException $e) {
+    error_log("Error PDO: " . $e->getMessage());
+    enviarRespuesta(false, null, 'Error de base de datos', 500);
 } catch (Exception $e) {
-    sendJSON(false, null, 'Error del servidor: ' . $e->getMessage());
-}
-
-/**
- * Generar contenido de Excel en formato CSV (básico)
- * En un entorno real deberías usar PhpSpreadsheet o similar
- */
-function generateExcelContent($data) {
-    $csv = '';
-    
-    if (empty($data)) {
-        return "No hay datos para exportar";
-    }
-    
-    // Agregar encabezados BOM para UTF-8
-    $csv = "\xEF\xBB\xBF";
-    
-    // Agregar encabezados
-    $headers = array_keys($data[0]);
-    $csv .= '"' . implode('","', $headers) . '"' . "\n";
-    
-    // Agregar datos
-    foreach ($data as $row) {
-        $values = array_map(function($value) {
-            return str_replace('"', '""', $value); // Escapar comillas dobles
-        }, array_values($row));
-        $csv .= '"' . implode('","', $values) . '"' . "\n";
-    }
-    
-    return $csv;
+    error_log("Error general: " . $e->getMessage());
+    enviarRespuesta(false, null, 'Error del servidor', 500);
 }
 ?>

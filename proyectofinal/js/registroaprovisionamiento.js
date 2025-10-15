@@ -1,4 +1,4 @@
-// Configuración para manejo de formularios con API
+// Configuracion para manejo de formularios con API
 document.addEventListener('DOMContentLoaded', function() {
     
     // Manejo del formulario de consulta
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const cedula = document.getElementById('cedula_consulta').value;
             if (cedula.length < 6 || cedula.length > 12) {
-                alert('La cédula debe tener entre 6 y 12 dígitos');
+                alert('La cedula debe tener entre 6 y 12 digitos');
                 return false;
             }
             
@@ -29,6 +29,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejo del formulario de aprovisionamiento
     const formAprovisionamiento = document.getElementById('formAprovisionamiento');
     if (formAprovisionamiento) {
+        // Control de campos segun estado
+        const estadoSelect = document.getElementById('estado_aprovisionamiento');
+        const camposOpcionales = [
+            'tipo_radio', 'mac_serial_radio', 'tipo_router_onu', 'mac_serial_router',
+            'ip_navegacion', 'ip_gestion', 'metros_cable', 'tipo_cable'
+        ];
+
+        function actualizarCamposObligatorios() {
+            const estado = estadoSelect.value;
+            const esCumplido = estado === 'CUMPLIDO';
+            
+            camposOpcionales.forEach(function(campoId) {
+                const campo = document.getElementById(campoId);
+                if (campo) {
+                    // REMOVER completamente el atributo required
+                    campo.removeAttribute('required');
+                    campo.required = false;
+                    // Habilitar campos solo si es CUMPLIDO
+                    campo.disabled = !esCumplido;
+                    if (!esCumplido) {
+                        campo.value = '';
+                    }
+                }
+            });
+        }
+
+        if (estadoSelect) {
+            estadoSelect.addEventListener('change', actualizarCamposObligatorios);
+            actualizarCamposObligatorios();
+        }
+
         formAprovisionamiento.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -65,6 +96,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejo del formulario de editar aprovisionamiento
     const formEditarAprovisionamiento = document.getElementById('formEditarAprovisionamiento');
     if (formEditarAprovisionamiento) {
+        // Control de campos segun estado en modal de edicion
+        const estadoEditSelect = document.querySelector('[name="estado_aprovisionamiento_edit"]');
+        const camposOpcionalesEdit = [
+            'tipo_radio_edit', 'mac_serial_radio_edit', 'tipo_router_onu_edit', 'mac_serial_router_edit',
+            'ip_navegacion_edit', 'ip_gestion_edit', 'metros_cable_edit', 'tipo_cable_edit'
+        ];
+
+        function actualizarCamposObligatoriosEdit() {
+            const estado = estadoEditSelect.value;
+            const esCumplido = estado === 'CUMPLIDO';
+            
+            camposOpcionalesEdit.forEach(function(campoName) {
+                const campo = document.querySelector('[name="' + campoName + '"]');
+                if (campo) {
+                    // NINGUN campo es obligatorio
+                    campo.required = false;
+                    // Habilitar campos solo si es CUMPLIDO
+                    campo.disabled = !esCumplido;
+                    if (!esCumplido && campo.tagName !== 'SELECT') {
+                        campo.value = '';
+                    }
+                }
+            });
+        }
+
+        if (estadoEditSelect) {
+            estadoEditSelect.addEventListener('change', actualizarCamposObligatoriosEdit);
+            actualizarCamposObligatoriosEdit();
+        }
+
         formEditarAprovisionamiento.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -79,21 +140,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // Limpiar el campo de búsqueda si hay parámetros en la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('cedula_consulta')) {
-        const cedulaInput = document.getElementById('cedula_consulta');
-        if (cedulaInput) {
-            // Opcional: limpiar el campo después de una consulta exitosa
-            // cedulaInput.value = '';
-        }
-    }
 });
 
-// Función para eliminar aprovisionamiento
+// Funcion para eliminar aprovisionamiento
 function eliminarAprovisionamiento(id) {
-    if (confirm('¿Está seguro de que desea eliminar este aprovisionamiento? Esta acción no se puede deshacer.')) {
+    if (confirm('Esta seguro de que desea eliminar este aprovisionamiento? Esta accion no se puede deshacer.')) {
         const formData = new FormData();
         formData.append('action', 'borrar_aprovisionamiento');
         formData.append('id_aprovisionamiento_a_borrar', id);
@@ -108,7 +159,7 @@ function eliminarAprovisionamiento(id) {
     }
 }
 
-// Función para enviar formularios a la API
+// Funcion para enviar formularios a la API
 function enviarFormulario(formData, callback) {
     fetch('api/api_registroaprovisionamiento.php', {
         method: 'POST',
@@ -123,42 +174,37 @@ function enviarFormulario(formData, callback) {
     .then(data => callback(data))
     .catch(error => {
         console.error('Error:', error);
-        mostrarMensaje('Error de conexión: ' + error.message, 'danger');
+        mostrarMensaje('Error de conexion: ' + error.message, 'danger');
     });
 }
 
-// Función para mostrar mensajes
+// Funcion para mostrar mensajes
 function mostrarMensaje(mensaje, tipo) {
     const container = document.querySelector('.container');
     if (!container) {
-        console.error('No se encontró el contenedor para mostrar el mensaje');
-        alert(mensaje); // Fallback
+        console.error('No se encontro el contenedor para mostrar el mensaje');
+        alert(mensaje);
         return;
     }
     
     const alert = document.createElement('div');
-    alert.className = `alert alert-${tipo} alert-dismissible fade show`;
-    alert.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+    alert.className = 'alert alert-' + tipo + ' alert-dismissible fade show';
+    alert.innerHTML = mensaje + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
     
-    // Insertar al principio del container o después del primer elemento
     if (container.children.length > 1) {
         container.insertBefore(alert, container.children[1]);
     } else {
         container.appendChild(alert);
     }
     
-    // Auto-remover la alerta después de 5 segundos
-    setTimeout(() => {
+    setTimeout(function() {
         if (alert && alert.parentNode) {
             alert.remove();
         }
     }, 5000);
 }
 
-// Función para toggle de detalles
+// Funcion para toggle de detalles
 function toggleDetails(checkboxId, containerId) {
     const checkbox = document.getElementById(checkboxId);
     const container = document.getElementById(containerId);
@@ -167,10 +213,22 @@ function toggleDetails(checkboxId, containerId) {
     }
 }
 
-// Función para confirmar cierre de sesión
+// Funcion para confirmar cierre de sesion
 function confirmarCerrarSesion() {
-    if (confirm('¿Está seguro de que desea cerrar sesión?')) {
+    if (confirm('Esta seguro de que desea cerrar sesion?')) {
         window.location.href = '?logout=1';
     }
 }
-        
+
+// Funcion para limpiar formulario de aprovisionamiento
+function limpiarFormularioAprovisionamiento() {
+    const form = document.getElementById('formAprovisionamiento');
+    if (form) {
+        form.reset();
+        const estadoSelect = document.getElementById('estado_aprovisionamiento');
+        if (estadoSelect) {
+            estadoSelect.value = 'PENDIENTE';
+            estadoSelect.dispatchEvent(new Event('change'));
+        }
+    }
+}

@@ -315,21 +315,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrar_agendamiento']
     }
 }
 
-// Procesar guardado de agendamiento (Create)
+// Procesar guardado de agendamiento (Crear - Create)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_agendamiento'])) {
     // Sanitizar y validar datos
     $data = sanitizarDatos($_POST);
-    $validacion = validarEntrada($data, ['cedula_cliente', 'fecha_visita', 'franja_visita', 'tecnico_asignado', 'estado_visita']);
+    // SOLO validamos notas y estado_visita como obligatorios
+    $validacion = validarEntrada($data, ['cedula_cliente', 'notas', 'estado_visita']);
     
     if (!$validacion['success']) {
         $mensaje = $validacion['message'];
         $tipo_mensaje = "danger";
     } else {
         $cedula_cliente = $data['cedula_cliente'];
-        $fecha_visita = $data['fecha_visita'];
-        $franja_visita = $data['franja_visita'];
-        $tecnico_asignado = $data['tecnico_asignado'];
-        $notas = $data['notas'] ?? '';
+        $fecha_visita = !empty($data['fecha_visita']) ? $data['fecha_visita'] : null;
+        $franja_visita = !empty($data['franja_visita']) ? $data['franja_visita'] : null;
+        $tecnico_asignado = !empty($data['tecnico_asignado']) ? $data['tecnico_asignado'] : null;
+        $notas = $data['notas'];
         $estado_visita = $data['estado_visita'];
 
         try {

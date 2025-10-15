@@ -48,7 +48,7 @@ function validarSesion() {
 }
 
 function limpiarEntrada($data) {
-    if (is_null($data)) return null;
+    if (is_null($data) || $data === '') return null;
     
     $data = (string) $data;
     // Normalizar UTF-8
@@ -61,7 +61,8 @@ function limpiarEntrada($data) {
     // Remover caracteres de control peligrosos
     $data = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $data);
     $data = htmlspecialchars($data, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
-    return $data;
+    
+    return empty($data) ? null : $data;
 }
 
 function validarYFormatearFecha($fecha_input) {
@@ -135,26 +136,54 @@ try {
 
         case 'guardar_aprovisionamiento':
             $cedula_cliente = limpiarEntrada($_POST['cedula_cliente'] ?? '');
+            $estado = limpiarEntrada($_POST['estado_aprovisionamiento'] ?? 'PENDIENTE');
 
             if (empty($cedula_cliente)) {
-                $response['message'] = 'Error: No se ha especificado una cédula de cliente. Por favor, consulte un cliente primero.';
+                $response['message'] = 'Error: No se ha especificado una cédula de cliente.';
                 break;
             }
 
-            $sql = "INSERT INTO aprovisionamiento (cedula_cliente, tipo_radio, mac_serial_radio, tipo_router_onu, mac_serial_router, ip_navegacion, ip_gestion, metros_cable, tipo_cable, notas_aprovisionamiento, estado_aprovisionamiento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // Solo las notas son obligatorias
+            $notas = limpiarEntrada($_POST['notas_aprovisionamiento'] ?? '');
+            if (empty($notas)) {
+                $response['message'] = 'Las notas de aprovisionamiento son obligatorias.';
+                break;
+            }
+
+            // Obtener todos los campos sin validaciones adicionales
+            $tipo_radio = limpiarEntrada($_POST['tipo_radio'] ?? '');
+            $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio'] ?? '');
+            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu'] ?? '') ?: 'PENDIENTE DE ASIGNACIÓN';
+            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router'] ?? '') ?: 'PENDIENTE';
+            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion'] ?? '') ?: '0.0.0.0';
+            $ip_gestion = limpiarEntrada($_POST['ip_gestion'] ?? '');
+            
+            // Manejar metros de cable: si está vacío o no es numérico, usar 0
+            $metros_cable = 0;
+            if (!empty($_POST['metros_cable']) && is_numeric($_POST['metros_cable'])) {
+                $metros_cable = (int)$_POST['metros_cable'];
+            }
+            
+            $tipo_cable = limpiarEntrada($_POST['tipo_cable'] ?? '');
+
+            $sql = "INSERT INTO aprovisionamiento 
+                    (cedula_cliente, tipo_radio, mac_serial_radio, tipo_router_onu, mac_serial_router, 
+                     ip_navegacion, ip_gestion, metros_cable, tipo_cable, notas_aprovisionamiento, estado_aprovisionamiento) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
             $stmt = $pdo->prepare($sql);
             $params = [
                 $cedula_cliente,
-                limpiarEntrada($_POST['tipo_radio'] ?? ''),
-                limpiarEntrada($_POST['mac_serial_radio'] ?? ''),
-                limpiarEntrada($_POST['tipo_router_onu'] ?? ''),
-                limpiarEntrada($_POST['mac_serial_router'] ?? ''),
-                limpiarEntrada($_POST['ip_navegacion'] ?? ''),
-                limpiarEntrada($_POST['ip_gestion'] ?? ''),
-                filter_var($_POST['metros_cable'] ?? 0, FILTER_VALIDATE_INT),
-                limpiarEntrada($_POST['tipo_cable'] ?? ''),
-                limpiarEntrada($_POST['notas_aprovisionamiento'] ?? ''),
-                limpiarEntrada($_POST['estado_aprovisionamiento'] ?? 'PENDIENTE')
+                $tipo_radio,
+                $mac_serial_radio,
+                $tipo_router_onu,
+                $mac_serial_router,
+                $ip_navegacion,
+                $ip_gestion,
+                $metros_cable,
+                $tipo_cable,
+                $notas,
+                $estado
             ];
             
             if ($stmt->execute($params)) {
@@ -167,6 +196,30 @@ try {
             break;
 
         case 'actualizar_aprovisionamiento':
+            $estado = limpiarEntrada($_POST['estado_aprovisionamiento_edit'] ?? '');
+            $notas = limpiarEntrada($_POST['notas_aprovisionamiento_edit'] ?? '');
+
+            if (empty($notas)) {
+                $response['message'] = 'Las notas de aprovisionamiento son obligatorias.';
+                break;
+            }
+
+            // Obtener todos los campos sin validaciones adicionales
+            $tipo_radio = limpiarEntrada($_POST['tipo_radio_edit'] ?? '');
+            $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio_edit'] ?? '');
+            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu_edit'] ?? '') ?: 'PENDIENTE DE ASIGNACIÓN';
+            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router_edit'] ?? '') ?: 'PENDIENTE';
+            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion_edit'] ?? '') ?: '0.0.0.0';
+            $ip_gestion = limpiarEntrada($_POST['ip_gestion_edit'] ?? '');
+            
+            // Manejar metros de cable: si está vacío o no es numérico, usar 0
+            $metros_cable = 0;
+            if (!empty($_POST['metros_cable_edit']) && is_numeric($_POST['metros_cable_edit'])) {
+                $metros_cable = (int)$_POST['metros_cable_edit'];
+            }
+            
+            $tipo_cable = limpiarEntrada($_POST['tipo_cable_edit'] ?? '');
+
             $sql = "UPDATE aprovisionamiento SET 
                         tipo_radio = ?, mac_serial_radio = ?, tipo_router_onu = ?, mac_serial_router = ?, 
                         ip_navegacion = ?, ip_gestion = ?, metros_cable = ?, tipo_cable = ?, 
@@ -175,16 +228,16 @@ try {
             
             $stmt = $pdo->prepare($sql);
             $params = [
-                limpiarEntrada($_POST['tipo_radio_edit'] ?? ''), 
-                limpiarEntrada($_POST['mac_serial_radio_edit'] ?? ''), 
-                limpiarEntrada($_POST['tipo_router_onu_edit'] ?? ''), 
-                limpiarEntrada($_POST['mac_serial_router_edit'] ?? ''), 
-                limpiarEntrada($_POST['ip_navegacion_edit'] ?? ''), 
-                limpiarEntrada($_POST['ip_gestion_edit'] ?? ''),
-                filter_var($_POST['metros_cable_edit'] ?? 0, FILTER_VALIDATE_INT), 
-                limpiarEntrada($_POST['tipo_cable_edit'] ?? ''), 
-                limpiarEntrada($_POST['notas_aprovisionamiento_edit'] ?? ''),
-                limpiarEntrada($_POST['estado_aprovisionamiento_edit'] ?? ''), 
+                $tipo_radio,
+                $mac_serial_radio,
+                $tipo_router_onu,
+                $mac_serial_router,
+                $ip_navegacion,
+                $ip_gestion,
+                $metros_cable,
+                $tipo_cable,
+                $notas,
+                $estado,
                 filter_var($_POST['id_aprovisionamiento_edit'] ?? 0, FILTER_VALIDATE_INT)
             ];
 
