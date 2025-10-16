@@ -1,90 +1,112 @@
 <?php
 /**
- * API para gestión de permisos de módulos - VERSIÓN CORREGIDA
+ * API para gestión de permisos de módulos - 
  */
 
+// Configuración de errores
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // No mostrar errores en producción
+ini_set('log_errors', 1);
+
+// Headers ANTES de cualquier salida
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Función para enviar respuesta JSON y terminar
+function sendJSON($data, $statusCode = 200) {
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit();
+}
 
 // Iniciar sesión si no está iniciada
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// DEBUG - Información de sesión (TEMPORAL)
-error_log("DEBUG API - Session data: " . print_r($_SESSION, true));
-
-// Configurar codificación
-ini_set('default_charset', 'UTF-8');
-mb_internal_encoding('UTF-8');
-
 // Verificar autenticación
 if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode([
+    sendJSON([
         'success' => false,
         'message' => 'Usuario no autenticado',
-        'code' => 'UNAUTHORIZED',
-        'debug' => [
-            'session_exists' => session_id() ? true : false,
-            'session_data' => $_SESSION ?? []
-        ]
-    ]);
-    exit();
+        'code' => 'UNAUTHORIZED'
+    ], 401);
 }
 
-// Configuración de base de datos
+// Configuración de base de datos con collation correcta
 try {
-    $pdo = new PDO("mysql:host=localhost;dbname=proyecto-final;charset=utf8mb4", "root", "");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo = new PDO(
+        "mysql:host=localhost;dbname=proyecto-final;charset=utf8mb4",
+        "root",
+        "",
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci"
+        ]
+    );
 } catch(PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
+    sendJSON([
         'success' => false,
-        'message' => 'Error de conexión a la base de datos: ' . $e->getMessage(),
-        'code' => 'DB_CONNECTION_ERROR'
-    ]);
-    exit();
+        'message' => 'Error de conexión a la base de datos',
+        'code' => 'DB_CONNECTION_ERROR',
+        'error' => $e->getMessage()
+    ], 500);
 }
 
-// Obtener información del usuario usando CEDULA en lugar de user_role
 $usuario_id = $_SESSION['user_id'];
 
-// FUNCIÓN CORREGIDA: Obtener permisos usando la cédula del usuario
-function obtenerPermisosUsuarioPorCedula($pdo, $usuario_id) {
+/**
+ * Obtener permisos del usuario de forma segura
+ */
+function obtenerPermisosUsuario($pdo, $usuario_id) {
     try {
-        // Primero obtener la cédula del usuario
-        $query_usuario = "SELECT cedula, modulo, nombre FROM administrador WHERE id = :usuario_id";
-        $stmt = $pdo->prepare($query_usuario);
-        $stmt->execute(['usuario_id' => $usuario_id]);
-        $usuario_data = $stmt->fetch();
+        // Obtener datos del usuario
+        $stmt = $pdo->prepare("
+            SELECT id, cedula, nombre, email, modulo 
+            FROM administrador 
+            WHERE id = ?
+        ");
+        $stmt->execute([$usuario_id]);
+        $usuario = $stmt->fetch();
         
-        if (!$usuario_data) {
-            error_log("Usuario no encontrado con ID: " . $usuario_id);
-            return [];
+        if (!$usuario) {
+            return [
+                'error' => 'Usuario no encontrado',
+                'usuario' => null,
+                'permisos' => []
+            ];
         }
         
-        error_log("DEBUG - Usuario encontrado: " . print_r($usuario_data, true));
-        
-        // Usar el procedimiento almacenado que ya tienes
-        $query = "CALL ObtenerPermisosUsuario(:cedula)";
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['cedula' => $usuario_data['cedula']]);
-        
+        // Obtener permisos usando JOIN directo (sin procedimiento almacenado)
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT
+                p.id as permiso_id,
+                p.nombre as permiso_nombre,
+                p.descripcion as permiso_descripcion
+            FROM modulo_permisos mp
+            INNER JOIN permisos p ON mp.permiso_id = p.id
+            WHERE mp.modulo = ?
+            ORDER BY p.nombre
+        ");
+        $stmt->execute([$usuario['modulo']]);
         $permisos = $stmt->fetchAll();
-        error_log("DEBUG - Permisos obtenidos: " . print_r($permisos, true));
         
         return [
-            'permisos' => $permisos,
-            'usuario' => $usuario_data
+            'error' => null,
+            'usuario' => $usuario,
+            'permisos' => $permisos
         ];
         
     } catch(PDOException $e) {
-        error_log("Error obteniendo permisos: " . $e->getMessage());
-        return [];
+        error_log("Error en obtenerPermisosUsuario: " . $e->getMessage());
+        return [
+            'error' => 'Error al obtener permisos: ' . $e->getMessage(),
+            'usuario' => null,
+            'permisos' => []
+        ];
     }
 }
 
@@ -169,50 +191,41 @@ $action = $_GET['action'] ?? '';
 
 switch($action) {
     case 'obtener_modulos':
-        // Obtener permisos del usuario usando la función corregida
-        $datos_usuario = obtenerPermisosUsuarioPorCedula($pdo, $usuario_id);
+        $resultado = obtenerPermisosUsuario($pdo, $usuario_id);
         
-        if (empty($datos_usuario)) {
-            echo json_encode([
+        if ($resultado['error']) {
+            sendJSON([
                 'success' => false,
-                'message' => 'No se pudieron obtener los permisos del usuario',
-                'code' => 'NO_PERMISSIONS_FOUND'
-            ]);
-            break;
+                'message' => $resultado['error'],
+                'code' => 'PERMISSION_ERROR'
+            ], 500);
         }
         
-        $permisos_usuario = $datos_usuario['permisos'];
-        $info_usuario = $datos_usuario['usuario'];
-        $nombres_permisos = array_column($permisos_usuario, 'permiso_nombre');
-        
-        error_log("DEBUG - Nombres de permisos: " . print_r($nombres_permisos, true));
+        $usuario = $resultado['usuario'];
+        $permisos = $resultado['permisos'];
+        $nombres_permisos = array_column($permisos, 'permiso_nombre');
         
         // Filtrar módulos según permisos
         $modulos_permitidos = [];
-        
         foreach($modulos_sistema as $key => $modulo) {
             if (in_array($modulo['permiso_requerido'], $nombres_permisos)) {
                 $modulos_permitidos[$key] = $modulo;
-                $modulos_permitidos[$key]['url'] = 'http://localhost/proyectofinal/' . $modulo['url'];
             }
         }
         
-        // Ordenar módulos por orden
+        // Ordenar módulos
         uasort($modulos_permitidos, function($a, $b) {
             return $a['orden'] <=> $b['orden'];
         });
         
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'data' => [
                 'modulos' => $modulos_permitidos,
                 'total_modulos' => count($modulos_permitidos),
-                'usuario_rol' => $info_usuario['modulo'],
-                'permisos' => $nombres_permisos,
-                'debug' => [
-                    'usuario_info' => $info_usuario,
-                    'permisos_raw' => $permisos_usuario
-                ]
+                'usuario_rol' => $usuario['modulo'],
+                'usuario_nombre' => $usuario['nombre'],
+                'permisos' => $nombres_permisos
             ],
             'message' => 'Módulos obtenidos exitosamente'
         ]);
@@ -222,64 +235,75 @@ switch($action) {
         $permiso = $_GET['permiso'] ?? '';
         
         if (empty($permiso)) {
-            echo json_encode([
+            sendJSON([
                 'success' => false,
                 'message' => 'Permiso no especificado'
-            ]);
-            break;
+            ], 400);
         }
         
-        $datos_usuario = obtenerPermisosUsuarioPorCedula($pdo, $usuario_id);
-        $permisos_usuario = $datos_usuario['permisos'] ?? [];
-        $nombres_permisos = array_column($permisos_usuario, 'permiso_nombre');
+        $resultado = obtenerPermisosUsuario($pdo, $usuario_id);
         
+        if ($resultado['error']) {
+            sendJSON([
+                'success' => false,
+                'message' => $resultado['error']
+            ], 500);
+        }
+        
+        $nombres_permisos = array_column($resultado['permisos'], 'permiso_nombre');
         $tiene_permiso = in_array($permiso, $nombres_permisos);
         
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'data' => [
                 'tiene_permiso' => $tiene_permiso,
                 'permiso' => $permiso,
-                'rol' => $datos_usuario['usuario']['modulo'] ?? 'No definido'
+                'rol' => $resultado['usuario']['modulo']
             ]
         ]);
         break;
         
     case 'obtener_info_usuario':
-        $datos_usuario = obtenerPermisosUsuarioPorCedula($pdo, $usuario_id);
-        $info_usuario = $datos_usuario['usuario'] ?? [];
+        $resultado = obtenerPermisosUsuario($pdo, $usuario_id);
         
-        echo json_encode([
+        if ($resultado['error']) {
+            sendJSON([
+                'success' => false,
+                'message' => $resultado['error']
+            ], 500);
+        }
+        
+        $usuario = $resultado['usuario'];
+        
+        sendJSON([
             'success' => true,
             'data' => [
                 'usuario_id' => $usuario_id,
-                'usuario_rol' => $info_usuario['modulo'] ?? 'No definido',
-                'usuario_nombre' => $info_usuario['nombre'] ?? $_SESSION['user_name'] ?? 'Usuario'
+                'usuario_rol' => $usuario['modulo'],
+                'usuario_nombre' => $usuario['nombre'],
+                'usuario_email' => $usuario['email']
             ]
         ]);
         break;
         
     case 'test_connection':
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'message' => 'API funcionando correctamente',
             'data' => [
                 'timestamp' => date('Y-m-d H:i:s'),
-                'usuario_activo' => isset($_SESSION['user_id']),
-                'session_data' => $_SESSION ?? []
+                'usuario_activo' => true,
+                'usuario_id' => $usuario_id,
+                'usuario_nombre' => $_SESSION['user_name'] ?? 'No definido'
             ]
         ]);
         break;
         
     default:
-        http_response_code(400);
-        echo json_encode([
+        sendJSON([
             'success' => false,
             'message' => 'Acción no válida',
             'code' => 'INVALID_ACTION'
-        ]);
-        break;
+        ], 400);
 }
-
-$pdo = null;
 ?>

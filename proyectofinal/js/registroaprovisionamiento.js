@@ -53,6 +53,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+            
+            // Las notas tampoco son obligatorias
+            const notasField = document.getElementById('notas_aprovisionamiento');
+            if (notasField) {
+                notasField.removeAttribute('required');
+                notasField.required = false;
+            }
         }
 
         if (estadoSelect) {
@@ -62,6 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         formAprovisionamiento.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Remover validación HTML5 para permitir campos vacíos
+            this.setAttribute('novalidate', 'novalidate');
+            
             const formData = new FormData(this);
             formData.append('action', 'guardar_aprovisionamiento');
             
@@ -111,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const campo = document.querySelector('[name="' + campoName + '"]');
                 if (campo) {
                     // NINGUN campo es obligatorio
+                    campo.removeAttribute('required');
                     campo.required = false;
                     // Habilitar campos solo si es CUMPLIDO
                     campo.disabled = !esCumplido;
@@ -119,6 +131,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+            
+            // Las notas tampoco son obligatorias
+            const notasEditField = document.querySelector('[name="notas_aprovisionamiento_edit"]');
+            if (notasEditField) {
+                notasEditField.removeAttribute('required');
+                notasEditField.required = false;
+            }
         }
 
         if (estadoEditSelect) {
@@ -128,6 +147,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         formEditarAprovisionamiento.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Remover validación HTML5 para permitir campos vacíos
+            this.setAttribute('novalidate', 'novalidate');
+            
             const formData = new FormData(this);
             formData.append('action', 'actualizar_aprovisionamiento');
             

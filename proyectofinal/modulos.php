@@ -78,7 +78,7 @@ $fecha_formateada = str_replace(
 $config = [
     'nombre_sistema' => 'SISTEMA DE VENTAS E INSTALACIONES',
     'subtitulo' => 'Internet para Todos',
-    'version' => '2.1.0'
+    'version' => '1.0.0'
 ];
 ?>
 
