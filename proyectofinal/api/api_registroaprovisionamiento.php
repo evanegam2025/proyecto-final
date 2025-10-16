@@ -143,28 +143,22 @@ try {
                 break;
             }
 
-            // Solo las notas son obligatorias
-            $notas = limpiarEntrada($_POST['notas_aprovisionamiento'] ?? '');
-            if (empty($notas)) {
-                $response['message'] = 'Las notas de aprovisionamiento son obligatorias.';
-                break;
-            }
-
-            // Obtener todos los campos sin validaciones adicionales
+            // NINGÚN campo es obligatorio - todos pueden estar vacíos
             $tipo_radio = limpiarEntrada($_POST['tipo_radio'] ?? '');
             $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio'] ?? '');
-            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu'] ?? '') ?: 'PENDIENTE DE ASIGNACIÓN';
-            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router'] ?? '') ?: 'PENDIENTE';
-            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion'] ?? '') ?: '0.0.0.0';
+            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu'] ?? '');
+            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router'] ?? '');
+            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion'] ?? '');
             $ip_gestion = limpiarEntrada($_POST['ip_gestion'] ?? '');
             
-            // Manejar metros de cable: si está vacío o no es numérico, usar 0
-            $metros_cable = 0;
+            // Manejar metros de cable: si está vacío o no es numérico, usar NULL
+            $metros_cable = null;
             if (!empty($_POST['metros_cable']) && is_numeric($_POST['metros_cable'])) {
                 $metros_cable = (int)$_POST['metros_cable'];
             }
             
             $tipo_cable = limpiarEntrada($_POST['tipo_cable'] ?? '');
+            $notas = limpiarEntrada($_POST['notas_aprovisionamiento'] ?? '');
 
             $sql = "INSERT INTO aprovisionamiento 
                     (cedula_cliente, tipo_radio, mac_serial_radio, tipo_router_onu, mac_serial_router, 
@@ -197,28 +191,23 @@ try {
 
         case 'actualizar_aprovisionamiento':
             $estado = limpiarEntrada($_POST['estado_aprovisionamiento_edit'] ?? '');
-            $notas = limpiarEntrada($_POST['notas_aprovisionamiento_edit'] ?? '');
 
-            if (empty($notas)) {
-                $response['message'] = 'Las notas de aprovisionamiento son obligatorias.';
-                break;
-            }
-
-            // Obtener todos los campos sin validaciones adicionales
+            // NINGÚN campo es obligatorio - todos pueden estar vacíos
             $tipo_radio = limpiarEntrada($_POST['tipo_radio_edit'] ?? '');
             $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio_edit'] ?? '');
-            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu_edit'] ?? '') ?: 'PENDIENTE DE ASIGNACIÓN';
-            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router_edit'] ?? '') ?: 'PENDIENTE';
-            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion_edit'] ?? '') ?: '0.0.0.0';
+            $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu_edit'] ?? '');
+            $mac_serial_router = limpiarEntrada($_POST['mac_serial_router_edit'] ?? '');
+            $ip_navegacion = limpiarEntrada($_POST['ip_navegacion_edit'] ?? '');
             $ip_gestion = limpiarEntrada($_POST['ip_gestion_edit'] ?? '');
             
-            // Manejar metros de cable: si está vacío o no es numérico, usar 0
-            $metros_cable = 0;
+            // Manejar metros de cable: si está vacío o no es numérico, usar NULL
+            $metros_cable = null;
             if (!empty($_POST['metros_cable_edit']) && is_numeric($_POST['metros_cable_edit'])) {
                 $metros_cable = (int)$_POST['metros_cable_edit'];
             }
             
             $tipo_cable = limpiarEntrada($_POST['tipo_cable_edit'] ?? '');
+            $notas = limpiarEntrada($_POST['notas_aprovisionamiento_edit'] ?? '');
 
             $sql = "UPDATE aprovisionamiento SET 
                         tipo_radio = ?, mac_serial_radio = ?, tipo_router_onu = ?, mac_serial_router = ?, 
