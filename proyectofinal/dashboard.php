@@ -1,3 +1,11 @@
+<?php
+// Incluir archivos de configuracion externos
+
+require_once 'conex_bd.php';
+require_once 'session_manager.php';
+
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

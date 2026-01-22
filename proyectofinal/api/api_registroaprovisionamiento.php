@@ -1,64 +1,70 @@
 <?php
-// Configurar codificación UTF-8mb4 completa
+// Save this file as UTF-8 WITHOUT BOM
+
+while (ob_get_level()) {
+    ob_end_clean();
+}
+
+ob_start();
+
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
-header('Content-Type: application/json; charset=UTF-8');
 ini_set('default_charset', 'utf-8');
 
-// Solo permitir peticiones POST
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(0);
+
+header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+header('Cache-Control: no-cache, must-revalidate');
+
+function enviarRespuesta($response) {
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    ob_start();
+    $json = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $json = json_encode([
+            'success' => false,
+            'message' => 'Error al codificar la respuesta: ' . json_last_error_msg()
+        ], JSON_UNESCAPED_UNICODE);
+    }
+    ob_end_clean();
+    echo $json;
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Método no permitido'], JSON_UNESCAPED_UNICODE);
-    exit();
+    enviarRespuesta(['success' => false, 'message' => 'Metodo no permitido']);
 }
 
-session_start();
-
-// ======================================================================
-// CONFIGURACIÓN DB
-// ======================================================================
-$host = 'localhost';
-$dbname = 'proyecto-final';
-$username = 'root';
-$password = '';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
-    ]);
-    $pdo->exec("SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE'");
-} catch(PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error de conexión'], JSON_UNESCAPED_UNICODE);
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
-
-// ======================================================================
-// FUNCIONES DE SEGURIDAD Y VALIDACIÓN
-// ======================================================================
 
 function validarSesion() {
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
-        return ['success' => false, 'message' => 'Acceso denegado. No ha iniciado sesión.'];
+        return ['success' => false, 'message' => 'Acceso denegado. No ha iniciado sesion.'];
     }
     return ['success' => true];
 }
 
 function limpiarEntrada($data) {
-    if (is_null($data) || $data === '') return null;
+    if (is_null($data) || $data === '') {
+        return null;
+    }
     
     $data = (string) $data;
-    // Normalizar UTF-8
+    
     if (function_exists('mb_convert_encoding')) {
         $data = mb_convert_encoding($data, 'UTF-8', 'UTF-8');
     }
     
     $data = trim($data);
     $data = stripslashes($data);
-    // Remover caracteres de control peligrosos
     $data = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $data);
     $data = htmlspecialchars($data, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
     
@@ -80,44 +86,54 @@ function validarYFormatearFecha($fecha_input) {
     return date('Y-m-d H:i:s');
 }
 
-// Verificar sesión activa
 $validacion = validarSesion();
 if (!$validacion['success']) {
     http_response_code(401);
-    echo json_encode($validacion, JSON_UNESCAPED_UNICODE);
-    exit();
+    enviarRespuesta($validacion);
 }
 
-// ======================================================================
-// PROCESAMIENTO DE ACCIONES
-// ======================================================================
+$pdo = null;
+try {
+    $dsn = "mysql:host=localhost;dbname=proyecto-final;charset=utf8mb4";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+    ];
+    
+    $pdo = new PDO($dsn, 'root', '', $options);
+    
+} catch (PDOException $e) {
+    http_response_code(500);
+    enviarRespuesta([
+        'success' => false,
+        'message' => 'Error de conexion a la base de datos'
+    ]);
+}
 
 $response = ['success' => false, 'message' => '', 'data' => null];
 
 try {
-    // Determinar la acción a realizar
     $action = $_POST['action'] ?? '';
 
     switch ($action) {
         case 'consultar_cedula':
             $cedula_consulta = limpiarEntrada($_POST['cedula_consulta'] ?? '');
             if (empty($cedula_consulta)) {
-                $response['message'] = 'Cédula es requerida';
+                $response['message'] = 'Cedula es requerida';
                 break;
             }
 
-            // 1. Consultar VENTA
             $stmt_venta = $pdo->prepare("SELECT * FROM ventas WHERE cedula = ? ORDER BY created_at DESC LIMIT 1");
             $stmt_venta->execute([$cedula_consulta]);
             $venta_encontrada = $stmt_venta->fetch();
             
             if ($venta_encontrada) {
-                // 2. Consultar AGENDAMIENTO
                 $stmt_agenda = $pdo->prepare("SELECT * FROM agendamiento WHERE cedula_cliente = ? ORDER BY id DESC LIMIT 1");
                 $stmt_agenda->execute([$cedula_consulta]);
                 $agendamiento_encontrado = $stmt_agenda->fetch();
 
-                // 3. Consultar APROVISIONAMIENTO
                 $stmt_aprov = $pdo->prepare("SELECT * FROM aprovisionamiento WHERE cedula_cliente = ? ORDER BY id DESC LIMIT 1");
                 $stmt_aprov->execute([$cedula_consulta]);
                 $aprovisionamiento_encontrado = $stmt_aprov->fetch();
@@ -130,7 +146,7 @@ try {
                 ];
                 $response['message'] = 'Datos consultados exitosamente';
             } else {
-                $response['message'] = 'No se encontró ninguna VENTA registrada con la cédula ' . htmlspecialchars($cedula_consulta, ENT_QUOTES, 'UTF-8') . '.';
+                $response['message'] = 'No se encontro ninguna VENTA registrada con la cedula ' . htmlspecialchars($cedula_consulta, ENT_QUOTES, 'UTF-8') . '.';
             }
             break;
 
@@ -139,11 +155,10 @@ try {
             $estado = limpiarEntrada($_POST['estado_aprovisionamiento'] ?? 'PENDIENTE');
 
             if (empty($cedula_cliente)) {
-                $response['message'] = 'Error: No se ha especificado una cédula de cliente.';
+                $response['message'] = 'Error: No se ha especificado una cedula de cliente.';
                 break;
             }
 
-            // NINGÚN campo es obligatorio - todos pueden estar vacíos
             $tipo_radio = limpiarEntrada($_POST['tipo_radio'] ?? '');
             $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio'] ?? '');
             $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu'] ?? '');
@@ -151,7 +166,6 @@ try {
             $ip_navegacion = limpiarEntrada($_POST['ip_navegacion'] ?? '');
             $ip_gestion = limpiarEntrada($_POST['ip_gestion'] ?? '');
             
-            // Manejar metros de cable: si está vacío o no es numérico, usar NULL
             $metros_cable = null;
             if (!empty($_POST['metros_cable']) && is_numeric($_POST['metros_cable'])) {
                 $metros_cable = (int)$_POST['metros_cable'];
@@ -192,7 +206,6 @@ try {
         case 'actualizar_aprovisionamiento':
             $estado = limpiarEntrada($_POST['estado_aprovisionamiento_edit'] ?? '');
 
-            // NINGÚN campo es obligatorio - todos pueden estar vacíos
             $tipo_radio = limpiarEntrada($_POST['tipo_radio_edit'] ?? '');
             $mac_serial_radio = limpiarEntrada($_POST['mac_serial_radio_edit'] ?? '');
             $tipo_router_onu = limpiarEntrada($_POST['tipo_router_onu_edit'] ?? '');
@@ -200,7 +213,6 @@ try {
             $ip_navegacion = limpiarEntrada($_POST['ip_navegacion_edit'] ?? '');
             $ip_gestion = limpiarEntrada($_POST['ip_gestion_edit'] ?? '');
             
-            // Manejar metros de cable: si está vacío o no es numérico, usar NULL
             $metros_cable = null;
             if (!empty($_POST['metros_cable_edit']) && is_numeric($_POST['metros_cable_edit'])) {
                 $metros_cable = (int)$_POST['metros_cable_edit'];
@@ -240,7 +252,6 @@ try {
             break;
 
         case 'actualizar_venta':
-            // Validar y formatear fecha
             $fecha_edit = validarYFormatearFecha($_POST['fecha_edit'] ?? '');
             
             $sql = "UPDATE ventas SET 
@@ -279,7 +290,7 @@ try {
         case 'borrar_aprovisionamiento':
             $id_a_borrar = filter_var($_POST['id_aprovisionamiento_a_borrar'] ?? 0, FILTER_VALIDATE_INT);
             if ($id_a_borrar === false || $id_a_borrar <= 0) {
-                throw new InvalidArgumentException("ID de aprovisionamiento inválido");
+                throw new InvalidArgumentException("ID de aprovisionamiento invalido");
             }
             
             $sql = "DELETE FROM aprovisionamiento WHERE id = ?";
@@ -294,16 +305,16 @@ try {
             break;
 
         default:
-            $response['message'] = 'Acción no válida';
+            $response['message'] = 'Accion no valida';
             break;
     }
 
 } catch (PDOException $e) {
+    $response['success'] = false;
     $response['message'] = 'Error de base de datos: ' . $e->getMessage();
 } catch (Exception $e) {
+    $response['success'] = false;
     $response['message'] = 'Error: ' . $e->getMessage();
 }
 
-// Enviar respuesta JSON
-echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
-?>
+enviarRespuesta($response);

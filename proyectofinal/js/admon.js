@@ -1,6 +1,6 @@
 /**
  * SISTEMA DE ADMINISTRACION - JAVASCRIPT
- * Version: 2.1.0 - Optimizado y sin problemas de carga
+ * Version: 2.0 - Optimizado y sin problemas de carga
  * Codificacion: UTF-8
  */
 
@@ -431,4 +431,4 @@ function confirmarEliminacion(cedula, nombre) {
 
 window.adminManager = new AdminManager();
 
-console.log('Sistema cargado correctamente - v1.0.0');
+console.log('Sistema cargado correctamente - v2.0');

@@ -11,6 +11,10 @@ header('Content-Type: text/html; charset=UTF-8');
 
 // Incluir archivo de conexión
 require_once 'conex_bd.php';
+require_once 'session_manager.php';
+
+// Proteger la página (verificar sesión activa)
+protegerPagina();
 
 // Verificar conexión a la base de datos
 if (!testDBConnection()) {

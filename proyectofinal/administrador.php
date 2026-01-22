@@ -7,30 +7,8 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
 // Clase de Configuración de Base de Datos
-class Database {
-    private $host = "localhost";
-    private $database = "proyecto-final";
-    private $username = "root";
-    private $password = "";
-    private $connection;
-    
-    public function connect() {
-        try {
-            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->database . ";charset=utf8mb4";
-            $options = array(
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            );
-            $this->connection = new PDO($dsn, $this->username, $this->password, $options);
-            $this->connection->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-            return $this->connection;
-        } catch(PDOException $e) {
-            error_log("Database Connection Error: " . $e->getMessage());
-            throw new Exception('Error de conexion a la base de datos');
-        }
-    }
-}
+require_once 'conex_bd.php';
+require_once 'session_manager.php';
 
 // Clase para manejar usuarios
 class UsuarioManager {

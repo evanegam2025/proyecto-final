@@ -1,467 +1,527 @@
 /**
- * LOGIN.JS - Sistema de Login con Validación y Timeout
- * Versión: 1.0
- * Autor: SVI
- * Descripción: Manejo de formulario de login, validaciones y timeout de sesión
+ * JAVASCRIPT DEL SISTEMA DE LOGIN
+ * Archivo: js/login.js
+ * Versión: 2.0
+ * Codificación: UTF-8
  */
 
-// ===== VARIABLES GLOBALES =====
-let loginForm;
-let togglePasswordBtn;
-let loadingSpinner;
-let loginBtn;
-let usuarioInput;
-let contrasenaInput;
-
-// Configuración de timeout (10 minutos)
-const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutos en milisegundos
-let sessionTimer;
-let warningTimer;
-let lastActivity;
-
-// ===== INICIALIZACIÓN =====
+// ============================================
+// ESPERAR A QUE EL DOM ESTÉ CARGADO
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    initializeElements();
-    initializeEventListeners();
-    initializeValidation();
-    setupSessionTimeout();
+    'use strict';
+
+    // ============================================
+    // CONSTANTES Y VARIABLES
+    // ============================================
+    const CONFIG = {
+        MIN_USERNAME_LENGTH: 3,
+        MAX_USERNAME_LENGTH: 50,
+        MIN_PASSWORD_LENGTH: 8,
+        ALERT_AUTO_CLOSE_TIME: 5000,
+        VALIDATION_DELAY: 300
+    };
+
+    // Elementos del DOM
+    const elements = {
+        loginForm: document.getElementById('loginForm'),
+        usuarioInput: document.getElementById('usuario'),
+        contrasenaInput: document.getElementById('contrasena'),
+        togglePassword: document.getElementById('togglePassword'),
+        loginBtn: document.getElementById('loginBtn'),
+        loadingSpinner: document.getElementById('loadingSpinner'),
+        alerts: document.querySelectorAll('.alert')
+    };
+
+    // ============================================
+    // FUNCIONES DE VALIDACIÓN
+    // ============================================
+
+    /**
+     * Valida el formato del usuario
+     * @param {string} value - Valor del campo usuario
+     * @returns {boolean} - True si es válido
+     */
+    function validarUsuario(value) {
+        const trimmedValue = value.trim();
+        
+        // Verificar longitud
+        if (trimmedValue.length < CONFIG.MIN_USERNAME_LENGTH || 
+            trimmedValue.length > CONFIG.MAX_USERNAME_LENGTH) {
+            return false;
+        }
+
+        // Verificar formato (alfanumérico y caracteres permitidos)
+        const regex = /^[a-zA-Z0-9._@-]+$/;
+        return regex.test(trimmedValue);
+    }
+
+    /**
+     * Valida la contraseña
+     * @param {string} value - Valor del campo contraseña
+     * @returns {boolean} - True si es válida
+     */
+    function validarContrasena(value) {
+        return value.length >= CONFIG.MIN_PASSWORD_LENGTH;
+    }
+
+    /**
+     * Muestra u oculta el feedback de validación
+     * @param {HTMLElement} input - Campo de entrada
+     * @param {boolean} isValid - Si es válido o no
+     */
+    function mostrarFeedback(input, isValid) {
+        if (isValid) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        } else {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+        }
+    }
+
+    /**
+     * Limpia el feedback de validación
+     * @param {HTMLElement} input - Campo de entrada
+     */
+    function limpiarFeedback(input) {
+        input.classList.remove('is-invalid');
+        input.classList.remove('is-valid');
+    }
+
+    // ============================================
+    // VALIDACIÓN EN TIEMPO REAL DEL USUARIO
+    // ============================================
+    let usuarioTimeout;
     
-    // Focus automático en el campo usuario
-    if (usuarioInput && !usuarioInput.value) {
-        usuarioInput.focus();
-    }
-});
+    if (elements.usuarioInput) {
+        elements.usuarioInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            
+            // Limpiar timeout anterior
+            clearTimeout(usuarioTimeout);
+            
+            // Si está vacío, limpiar feedback
+            if (value === '') {
+                limpiarFeedback(this);
+                return;
+            }
+            
+            // Esperar un momento antes de validar
+            usuarioTimeout = setTimeout(() => {
+                const isValid = validarUsuario(value);
+                
+                // Solo mostrar feedback si es inválido
+                if (!isValid) {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.remove('is-valid');
+                }
+            }, CONFIG.VALIDATION_DELAY);
+        });
 
-// ===== INICIALIZACIÓN DE ELEMENTOS =====
-function initializeElements() {
-    loginForm = document.getElementById('loginForm');
-    togglePasswordBtn = document.getElementById('togglePassword');
-    loadingSpinner = document.getElementById('loadingSpinner');
-    loginBtn = document.getElementById('loginBtn');
-    usuarioInput = document.getElementById('usuario');
-    contrasenaInput = document.getElementById('contrasena');
-}
-
-// ===== CONFIGURACIÓN DE EVENT LISTENERS =====
-function initializeEventListeners() {
-    // Toggle password visibility
-    if (togglePasswordBtn) {
-        togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
-    }
-
-    // Form submission
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleFormSubmission);
-    }
-
-    // Input validation en tiempo real
-    if (usuarioInput) {
-        usuarioInput.addEventListener('input', validateUsuarioField);
-        usuarioInput.addEventListener('blur', validateUsuarioField);
-        usuarioInput.addEventListener('keypress', handleUsuarioKeypress);
-    }
-
-    if (contrasenaInput) {
-        contrasenaInput.addEventListener('input', validateContrasenaField);
-        contrasenaInput.addEventListener('blur', validateContrasenaField);
-        contrasenaInput.addEventListener('keypress', handlePasswordKeypress);
-    }
-
-    // Detectar actividad del usuario para timeout
-    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
-        document.addEventListener(event, resetActivityTimer, true);
-    });
-
-    // Manejo de visibilidad de la página
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Prevenir copiar/pegar en campos sensibles (opcional)
-    if (contrasenaInput) {
-        contrasenaInput.addEventListener('paste', function(e) {
-            // Permitir paste pero limpiar después de un delay
-            setTimeout(() => {
-                validateContrasenaField();
-            }, 100);
+        // Limpiar feedback al hacer focus
+        elements.usuarioInput.addEventListener('focus', function() {
+            if (this.value.trim() === '') {
+                limpiarFeedback(this);
+            }
         });
     }
-}
 
-// ===== TOGGLE PASSWORD VISIBILITY =====
-function togglePasswordVisibility() {
-    const type = contrasenaInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    const icon = togglePasswordBtn.querySelector('i');
+    // ============================================
+    // VALIDACIÓN EN TIEMPO REAL DE LA CONTRASEÑA
+    // ============================================
+    let contrasenaTimeout;
     
-    contrasenaInput.setAttribute('type', type);
-    
-    if (type === 'password') {
-        icon.className = 'bi bi-eye';
-        togglePasswordBtn.setAttribute('aria-label', 'Mostrar contraseña');
-    } else {
-        icon.className = 'bi bi-eye-slash';
-        togglePasswordBtn.setAttribute('aria-label', 'Ocultar contraseña');
+    if (elements.contrasenaInput) {
+        elements.contrasenaInput.addEventListener('input', function() {
+            const value = this.value;
+            
+            // Limpiar timeout anterior
+            clearTimeout(contrasenaTimeout);
+            
+            // Si está vacío, limpiar feedback
+            if (value === '') {
+                limpiarFeedback(this);
+                return;
+            }
+            
+            // Esperar un momento antes de validar
+            contrasenaTimeout = setTimeout(() => {
+                const isValid = validarContrasena(value);
+                
+                // Solo mostrar feedback si es inválido
+                if (!isValid) {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.remove('is-valid');
+                }
+            }, CONFIG.VALIDATION_DELAY);
+        });
+
+        // Limpiar feedback al hacer focus
+        elements.contrasenaInput.addEventListener('focus', function() {
+            if (this.value === '') {
+                limpiarFeedback(this);
+            }
+        });
     }
-}
 
-// ===== VALIDACIÓN DE CAMPOS =====
-function validateUsuarioField() {
-    const value = usuarioInput.value.trim();
-    const isValid = validateUsuario(value);
-    
-    updateFieldValidation(usuarioInput, isValid, 'Usuario válido', 'Usuario debe tener entre 3 y 50 caracteres y solo contener letras, números, puntos, guiones y @');
-    
-    return isValid;
-}
+    // ============================================
+    // TOGGLE MOSTRAR/OCULTAR CONTRASEÑA
+    // ============================================
+    if (elements.togglePassword && elements.contrasenaInput) {
+        elements.togglePassword.addEventListener('click', function() {
+            // Cambiar tipo de input
+            const type = elements.contrasenaInput.getAttribute('type') === 'password' 
+                ? 'text' 
+                : 'password';
+            elements.contrasenaInput.setAttribute('type', type);
+            
+            // Cambiar icono
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
+            }
+            
+            // Mantener el foco en el campo de contraseña
+            elements.contrasenaInput.focus();
+        });
+    }
 
-function validateContrasenaField() {
-    const value = contrasenaInput.value;
-    const isValid = validateContrasena(value);
-    
-    updateFieldValidation(contrasenaInput, isValid, 'Contraseña válida', 'La contraseña debe tener al menos 6 caracteres');
-    
-    return isValid;
-}
+    // ============================================
+    // VALIDACIÓN DEL FORMULARIO AL ENVIAR
+    // ============================================
+    if (elements.loginForm) {
+        elements.loginForm.addEventListener('submit', function(e) {
+            let isValid = true;
+            let firstInvalidField = null;
 
-function validateUsuario(usuario) {
-    if (!usuario || usuario.length < 3 || usuario.length > 50) {
+            // Validar usuario
+            if (elements.usuarioInput) {
+                const usuarioValue = elements.usuarioInput.value.trim();
+                
+                if (usuarioValue === '' || !validarUsuario(usuarioValue)) {
+                    elements.usuarioInput.classList.add('is-invalid');
+                    isValid = false;
+                    
+                    if (!firstInvalidField) {
+                        firstInvalidField = elements.usuarioInput;
+                    }
+                } else {
+                    elements.usuarioInput.classList.remove('is-invalid');
+                }
+            }
+
+            // Validar contraseña
+            if (elements.contrasenaInput) {
+                const contrasenaValue = elements.contrasenaInput.value;
+                
+                if (contrasenaValue === '' || !validarContrasena(contrasenaValue)) {
+                    elements.contrasenaInput.classList.add('is-invalid');
+                    isValid = false;
+                    
+                    if (!firstInvalidField) {
+                        firstInvalidField = elements.contrasenaInput;
+                    }
+                } else {
+                    elements.contrasenaInput.classList.remove('is-invalid');
+                }
+            }
+
+            // Si no es válido, prevenir envío y hacer focus en primer campo inválido
+            if (!isValid) {
+                e.preventDefault();
+                
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                    
+                    // Agregar animación de shake
+                    elements.loginForm.classList.add('shake');
+                    setTimeout(() => {
+                        elements.loginForm.classList.remove('shake');
+                    }, 500);
+                }
+                
+                return false;
+            }
+
+            // Si es válido, mostrar spinner y deshabilitar botón
+            if (elements.loginBtn) {
+                elements.loginBtn.disabled = true;
+            }
+            
+            if (elements.loadingSpinner) {
+                elements.loadingSpinner.classList.remove('d-none');
+            }
+
+            // El formulario se enviará normalmente
+            return true;
+        });
+    }
+
+    // ============================================
+    // AUTO-CERRAR ALERTAS
+    // ============================================
+    if (elements.alerts && elements.alerts.length > 0) {
+        elements.alerts.forEach(function(alert) {
+            // Auto-cerrar después del tiempo configurado
+            setTimeout(function() {
+                // Verificar si Bootstrap está disponible
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                } else {
+                    // Fallback manual si Bootstrap no está disponible
+                    alert.style.transition = 'opacity 0.3s';
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }
+            }, CONFIG.ALERT_AUTO_CLOSE_TIME);
+        });
+    }
+
+    // ============================================
+    // PREVENIR DOBLE ENVÍO DEL FORMULARIO
+    // ============================================
+    let formSubmitted = false;
+    
+    if (elements.loginForm) {
+        elements.loginForm.addEventListener('submit', function() {
+            if (formSubmitted) {
+                return false;
+            }
+            formSubmitted = true;
+        });
+    }
+
+    // ============================================
+    // LIMPIAR MENSAJES AL ESCRIBIR
+    // ============================================
+    function limpiarMensajesError() {
+        const alerts = document.querySelectorAll('.alert-danger');
+        alerts.forEach(alert => {
+            alert.style.transition = 'opacity 0.3s';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                alert.remove();
+            }, 300);
+        });
+    }
+
+    if (elements.usuarioInput) {
+        elements.usuarioInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                limpiarMensajesError();
+            }
+        });
+    }
+
+    if (elements.contrasenaInput) {
+        elements.contrasenaInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                limpiarMensajesError();
+            }
+        });
+    }
+
+    // ============================================
+    // MANEJO DE TECLAS ESPECIALES
+    // ============================================
+    
+    // Enter en campo de usuario va a contraseña
+    if (elements.usuarioInput && elements.contrasenaInput) {
+        elements.usuarioInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                elements.contrasenaInput.focus();
+            }
+        });
+    }
+
+    // Espacio en contraseña (permitir pero limpiar espacios al inicio)
+    if (elements.usuarioInput) {
+        elements.usuarioInput.addEventListener('keyup', function() {
+            // Limpiar espacios al inicio mientras escribe
+            if (this.value.startsWith(' ')) {
+                this.value = this.value.trimStart();
+            }
+        });
+    }
+
+    // ============================================
+    // FOCUS AUTOMÁTICO EN EL PRIMER CAMPO
+    // ============================================
+    if (elements.usuarioInput && !elements.usuarioInput.value) {
+        elements.usuarioInput.focus();
+    }
+
+    // ============================================
+    // DETECCIÓN DE COPY/PASTE
+    // ============================================
+    if (elements.usuarioInput) {
+        elements.usuarioInput.addEventListener('paste', function(e) {
+            // Permitir paste pero validar después
+            setTimeout(() => {
+                this.value = this.value.trim();
+                this.dispatchEvent(new Event('input'));
+            }, 10);
+        });
+    }
+
+    // ============================================
+    // PROTECCIÓN CONTRA ATAQUES DE FUERZA BRUTA
+    // (Implementación básica en frontend)
+    // ============================================
+    let intentosFallidos = 0;
+    const MAX_INTENTOS = 5;
+    const TIEMPO_BLOQUEO = 60000; // 1 minuto
+
+    function verificarBloqueo() {
+        const bloqueadoHasta = localStorage.getItem('bloqueadoHasta');
+        
+        if (bloqueadoHasta) {
+            const ahora = Date.now();
+            const tiempoBloqueo = parseInt(bloqueadoHasta);
+            
+            if (ahora < tiempoBloqueo) {
+                return true;
+            } else {
+                localStorage.removeItem('bloqueadoHasta');
+                localStorage.removeItem('intentosFallidos');
+            }
+        }
+        
         return false;
     }
-    
-    // Permitir letras, números, puntos, guiones, guiones bajos y @
-    const pattern = /^[a-zA-Z0-9._@-]+$/;
-    return pattern.test(usuario);
-}
 
-function validateContrasena(contrasena) {
-    return contrasena && contrasena.length >= 6;
-}
-
-function updateFieldValidation(field, isValid, validMessage, invalidMessage) {
-    const feedback = field.parentNode.querySelector('.invalid-feedback') || 
-                    field.parentNode.querySelector('.valid-feedback');
-    
-    field.classList.remove('is-valid', 'is-invalid');
-    
-    if (field.value.trim() !== '') {
-        if (isValid) {
-            field.classList.add('is-valid');
-            if (feedback) {
-                feedback.textContent = validMessage;
-                feedback.className = 'valid-feedback';
-            }
-        } else {
-            field.classList.add('is-invalid');
-            if (feedback) {
-                feedback.textContent = invalidMessage;
-                feedback.className = 'invalid-feedback';
-            }
-        }
-    }
-}
-
-// ===== MANEJO DE TECLADO =====
-function handleUsuarioKeypress(e) {
-    // Prevenir caracteres especiales no permitidos
-    const allowedChars = /[a-zA-Z0-9._@-]/;
-    const char = String.fromCharCode(e.which);
-    
-    if (!allowedChars.test(char) && !isControlKey(e)) {
-        e.preventDefault();
-        showTemporaryTooltip(usuarioInput, 'Solo se permiten letras, números, puntos, guiones y @');
-    }
-}
-
-function handlePasswordKeypress(e) {
-    // Enter key submits form
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        handleFormSubmission(e);
-    }
-}
-
-function isControlKey(e) {
-    // Permitir teclas de control (Backspace, Delete, Tab, Enter, etc.)
-    return e.which === 8 || e.which === 9 || e.which === 13 || e.which === 46 || 
-           e.which === 37 || e.which === 39 || e.which === 38 || e.which === 40 ||
-           e.ctrlKey || e.altKey;
-}
-
-// ===== MANEJO DE FORMULARIO =====
-function handleFormSubmission(e) {
-    e.preventDefault();
-    
-    // Validar campos
-    const isUsuarioValid = validateUsuarioField();
-    const isContrasenaValid = validateContrasenaField();
-    
-    if (!isUsuarioValid || !isContrasenaValid) {
-        loginForm.classList.add('was-validated');
-        showAlert('Por favor, corrija los errores en el formulario', 'danger');
+    function registrarIntentoFallido() {
+        intentosFallidos = parseInt(localStorage.getItem('intentosFallidos') || '0') + 1;
+        localStorage.setItem('intentosFallidos', intentosFallidos.toString());
         
-        // Focus en el primer campo inválido
-        const firstInvalidField = loginForm.querySelector('.is-invalid');
-        if (firstInvalidField) {
-            firstInvalidField.focus();
+        if (intentosFallidos >= MAX_INTENTOS) {
+            const bloqueadoHasta = Date.now() + TIEMPO_BLOQUEO;
+            localStorage.setItem('bloqueadoHasta', bloqueadoHasta.toString());
+            
+            mostrarAlerta(
+                'Has excedido el número máximo de intentos. Por favor espera 1 minuto.',
+                'danger'
+            );
+            
+            if (elements.loginBtn) {
+                elements.loginBtn.disabled = true;
+            }
+            
+            setTimeout(() => {
+                localStorage.removeItem('bloqueadoHasta');
+                localStorage.removeItem('intentosFallidos');
+                
+                if (elements.loginBtn) {
+                    elements.loginBtn.disabled = false;
+                }
+                
+                location.reload();
+            }, TIEMPO_BLOQUEO);
         }
+    }
+
+    // Verificar bloqueo al cargar la página
+    if (verificarBloqueo()) {
+        const bloqueadoHasta = parseInt(localStorage.getItem('bloqueadoHasta'));
+        const tiempoRestante = Math.ceil((bloqueadoHasta - Date.now()) / 1000);
         
-        return false;
-    }
-    
-    // Mostrar loading
-    showLoading(true);
-    
-    // Simular validación adicional antes de envío
-    setTimeout(() => {
-        // Enviar formulario
-        loginForm.submit();
-    }, 500);
-}
-
-// ===== INICIALIZACIÓN DE VALIDACIÓN =====
-function initializeValidation() {
-    // Crear elementos de feedback si no existen
-    [usuarioInput, contrasenaInput].forEach(input => {
-        if (input && !input.parentNode.querySelector('.invalid-feedback')) {
-            const feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback';
-            input.parentNode.appendChild(feedback);
-        }
-    });
-}
-
-// ===== MANEJO DE LOADING =====
-function showLoading(show) {
-    if (loadingSpinner && loginBtn) {
-        if (show) {
-            loadingSpinner.classList.remove('d-none');
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando...';
-        } else {
-            loadingSpinner.classList.add('d-none');
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión';
+        mostrarAlerta(
+            `Cuenta temporalmente bloqueada. Intenta nuevamente en ${tiempoRestante} segundos.`,
+            'warning'
+        );
+        
+        if (elements.loginBtn) {
+            elements.loginBtn.disabled = true;
         }
     }
-}
 
-// ===== SISTEMA DE ALERTAS =====
-function showAlert(message, type = 'info', duration = 5000) {
-    // Remover alertas existentes
-    const existingAlerts = document.querySelectorAll('.alert:not([role="alert"])');
-    existingAlerts.forEach(alert => alert.remove());
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.setAttribute('role', 'alert');
-    
-    const icon = getAlertIcon(type);
-    
-    alertDiv.innerHTML = `
-        <i class="bi bi-${icon}"></i>
-        ${escapeHtml(message)}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    `;
-    
-    // Insertar antes del formulario
-    const container = document.querySelector('.login-container');
-    const form = document.getElementById('loginForm');
-    container.insertBefore(alertDiv, form);
-    
-    // Auto-dismiss después de duration
-    if (duration > 0) {
+    // ============================================
+    // FUNCIÓN PARA MOSTRAR ALERTAS DINÁMICAS
+    // ============================================
+    function mostrarAlerta(mensaje, tipo = 'info') {
+        const iconos = {
+            danger: 'exclamation-triangle',
+            success: 'check-circle',
+            warning: 'exclamation-circle',
+            info: 'info-circle'
+        };
+
+        const alerta = document.createElement('div');
+        alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alerta.setAttribute('role', 'alert');
+        alerta.innerHTML = `
+            <i class="bi bi-${iconos[tipo] || 'info-circle'}"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        `;
+
+        // Insertar antes del formulario
+        if (elements.loginForm) {
+            elements.loginForm.parentNode.insertBefore(alerta, elements.loginForm);
+        }
+
+        // Auto-cerrar
         setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+            alerta.style.transition = 'opacity 0.3s';
+            alerta.style.opacity = '0';
+            setTimeout(() => alerta.remove(), 300);
+        }, CONFIG.ALERT_AUTO_CLOSE_TIME);
+    }
+
+    // ============================================
+    // DETECCIÓN DE CAPS LOCK
+    // ============================================
+    if (elements.contrasenaInput) {
+        elements.contrasenaInput.addEventListener('keyup', function(e) {
+            if (e.getModifierState && e.getModifierState('CapsLock')) {
+                if (!document.getElementById('capsLockWarning')) {
+                    const warning = document.createElement('small');
+                    warning.id = 'capsLockWarning';
+                    warning.className = 'text-warning';
+                    warning.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Bloq Mayús activado';
+                    this.parentElement.appendChild(warning);
+                }
+            } else {
+                const warning = document.getElementById('capsLockWarning');
+                if (warning) {
+                    warning.remove();
+                }
             }
-        }, duration);
+        });
     }
-}
 
-function getAlertIcon(type) {
-    const icons = {
-        'success': 'check-circle',
-        'danger': 'exclamation-triangle',
-        'warning': 'exclamation-triangle',
-        'info': 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-// ===== TOOLTIP TEMPORAL =====
-function showTemporaryTooltip(element, message, duration = 3000) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip-temp';
-    tooltip.textContent = message;
-    tooltip.style.cssText = `
-        position: absolute;
-        background: #dc3545;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        font-size: 0.875rem;
-        z-index: 1000;
-        animation: fadeInUp 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
+    // ============================================
+    // LOGS DE CONSOLA (SOLO EN DESARROLLO)
+    // ============================================
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1';
     
-    // Posicionar tooltip
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = rect.left + 'px';
-    tooltip.style.top = (rect.bottom + 5) + 'px';
-    
-    document.body.appendChild(tooltip);
-    
-    setTimeout(() => {
-        if (tooltip.parentNode) {
-            tooltip.remove();
-        }
-    }, duration);
-}
-
-// ===== TIMEOUT DE SESIÓN =====
-function setupSessionTimeout() {
-    lastActivity = Date.now();
-    resetSessionTimer();
-}
-
-function resetActivityTimer() {
-    lastActivity = Date.now();
-    resetSessionTimer();
-}
-
-function resetSessionTimer() {
-    clearTimeout(sessionTimer);
-    clearTimeout(warningTimer);
-    
-    // Warning 2 minutos antes del timeout
-    warningTimer = setTimeout(showSessionWarning, SESSION_TIMEOUT - (2 * 60 * 1000));
-    
-    // Timeout completo
-    sessionTimer = setTimeout(handleSessionTimeout, SESSION_TIMEOUT);
-}
-
-function showSessionWarning() {
-    const warning = confirm('Su sesión expirará en 2 minutos por inactividad. ¿Desea continuar?');
-    
-    if (warning) {
-        resetActivityTimer();
-        showAlert('Sesión extendida', 'success', 3000);
-    } else {
-        handleSessionTimeout();
+    if (isDevelopment) {
+        console.log('🔐 Sistema de Login inicializado');
+        console.log('📋 Configuración:', CONFIG);
+        console.log('🎨 Elementos DOM cargados:', elements);
     }
-}
 
-function handleSessionTimeout() {
-    alert('Su sesión ha expirado por inactividad. Será redirigido a la página de login.');
-    window.location.href = 'logout.php';
-}
+    // ============================================
+    // MENSAJE DE BIENVENIDA EN CONSOLA
+    // ============================================
+    console.log('%c🔐 Sistema de Login v2.0', 'color: #2c5f7f; font-size: 16px; font-weight: bold;');
+    console.log('%c✅ JavaScript cargado correctamente', 'color: #4caf50; font-size: 12px;');
 
-function handleVisibilityChange() {
-    if (document.hidden) {
-        // Página oculta - pausar timers
-        clearTimeout(sessionTimer);
-        clearTimeout(warningTimer);
-    } else {
-        // Página visible - reanudar timers
-        const inactiveTime = Date.now() - lastActivity;
-        
-        if (inactiveTime >= SESSION_TIMEOUT) {
-            handleSessionTimeout();
-        } else {
-            resetSessionTimer();
-        }
-    }
-}
-
-// ===== UTILIDADES =====
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
-// ===== ACCESIBILIDAD =====
-function announceToScreenReader(message) {
-    const announcement = document.createElement('div');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-atomic', 'true');
-    announcement.className = 'sr-only';
-    announcement.textContent = message;
-    
-    document.body.appendChild(announcement);
-    
-    setTimeout(() => {
-        document.body.removeChild(announcement);
-    }, 1000);
-}
-
-// ===== MANEJO DE ERRORES GLOBALES =====
-window.addEventListener('error', function(e) {
-    console.error('Error en login.js:', e.error);
-    showAlert('Ha ocurrido un error inesperado. Por favor, recargue la página.', 'danger');
 });
 
-// ===== VALIDACIÓN DE CONECTIVIDAD =====
-function checkNetworkStatus() {
-    if (!navigator.onLine) {
-        showAlert('Sin conexión a internet. Verifique su conexión.', 'warning');
-        loginBtn.disabled = true;
-    } else {
-        loginBtn.disabled = false;
-    }
-}
-
-window.addEventListener('online', function() {
-    showAlert('Conexión restaurada', 'success', 3000);
-    loginBtn.disabled = false;
-});
-
-window.addEventListener('offline', function() {
-    showAlert('Sin conexión a internet', 'warning');
-    loginBtn.disabled = true;
-});
-
-// ===== PREVENCIÓN DE ATAQUES =====
-function preventBruteForce() {
-    const maxAttempts = 5;
-    const blockTime = 15 * 60 * 1000; // 15 minutos
-    
-    let attempts = parseInt(sessionStorage.getItem('loginAttempts') || '0');
-    const lastAttempt = parseInt(sessionStorage.getItem('lastLoginAttempt') || '0');
-    
-    // Reset attempts if block time has passed
-    if (Date.now() - lastAttempt > blockTime) {
-        attempts = 0;
-        sessionStorage.removeItem('loginAttempts');
-        sessionStorage.removeItem('lastLoginAttempt');
-    }
-    
-    if (attempts >= maxAttempts) {
-        const remainingTime = Math.ceil((blockTime - (Date.now() - lastAttempt)) / 1000 / 60);
-        showAlert(`Demasiados intentos fallidos. Inténtelo de nuevo en ${remainingTime} minutos.`, 'danger');
-        loginBtn.disabled = true;
-        return false;
-    }
-    
-    return true;
-}
-
-// ===== EXPORTAR FUNCIONES PARA USO GLOBAL =====
-window.LoginManager = {
-    showAlert,
-    showLoading,
-    resetActivityTimer,
-    validateUsuario,
-    validateContrasena
-};
-
-// ===== LOG DE DEBUGGING (SOLO EN DESARROLLO) =====
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('Login.js cargado correctamente');
-    console.log('Timeout de sesión configurado:', SESSION_TIMEOUT / 1000 / 60, 'minutos');
-}
+// ============================================
+// FIN DEL ARCHIVO JAVASCRIPT
+// ============================================

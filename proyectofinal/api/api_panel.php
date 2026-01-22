@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Incluir archivo de conexión
 require_once '../conex_bd.php';
 
+
 /**
  * Función para enviar respuesta JSON
  */

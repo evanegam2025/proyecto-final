@@ -1,53 +1,31 @@
 <?php
+// Configurar codificacion UTF-8mb4 completa
 
-header('Content-Type: text/html; charset=utf-8');
+header('Content-Type: text/html; charset=UTF-8');
 ini_set('default_charset', 'UTF-8');
 mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+
+// Incluir archivos de configuracion externos
+require_once 'conex_bd.php';
 
 
 
-// Iniciar la sesión y configurar charset
-ini_set('default_charset', 'UTF-8');
-mb_internal_encoding('UTF-8');
 
-// Configuración de la base de datos
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "proyecto-final";
-
+// Obtener conexion a la base de datos
 try {
-    // Crear conexión PDO con configuración completa UTF-8mb4
-    $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
-    $options = [
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false, // Usar prepared statements reales
-        PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
-    ];
-    
-    $pdo = new PDO($dsn, $username, $password, $options);
-    
-    // Asegurar UTF-8mb4 en la sesión
-    $pdo->exec("SET CHARACTER SET utf8mb4");
-    $pdo->exec("SET COLLATION_CONNECTION = utf8mb4_unicode_ci");
-    
-} catch(PDOException $e) {
+    $pdo = getDBConnection();
+} catch(Exception $e) {
     http_response_code(500);
-    
-    // Log del error real para desarrolladores
-    error_log("Error de conexión DB: " . $e->getMessage());
-    
-    // Mensaje genérico para usuarios
+    error_log("Error de conexion DB: " . $e->getMessage());
     echo json_encode([
         'success' => false, 
-        'message' => "Error de conexión a la base de datos. Por favor contacte al administrador."
+        'message' => "Error de conexion a la base de datos. Por favor contacte al administrador."
     ], JSON_UNESCAPED_UNICODE);
     die();
 }
 
-session_start();
+
 
 // ======================================================================
 // FUNCIONES DE SEGURIDAD Y VALIDACIÓN MEJORADAS
@@ -77,12 +55,18 @@ function sanitizarDatos($data) {
     // Limpiar espacios
     $data = trim($data);
     
-    // Validar y limpiar UTF-8mb4 evitando caracteres dañinos
-$data = filter_var($data, FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-$data = mb_convert_encoding($data, 'UTF-8', 'auto');
+    // Validar y limpiar UTF-8mb4 - MÉTODO CORRECTO SIN FILTER_SANITIZE_STRING
+    // Primero aseguramos que sea UTF-8 válido
+    if (!mb_check_encoding($data, 'UTF-8')) {
+        $data = mb_convert_encoding($data, 'UTF-8', 'auto');
+    }
     
     // Remover caracteres de control excepto saltos de línea y tabulaciones
     $data = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $data);
+    
+    // Remover caracteres especiales peligrosos pero mantener caracteres UTF-8 válidos
+    // Esta expresión permite letras, números, espacios, puntuación común y caracteres acentuados
+    $data = preg_replace('/[^\p{L}\p{N}\p{P}\p{Z}\s\r\n\t]/u', '', $data);
     
     // Escapar caracteres HTML para prevenir XSS
     $data = htmlspecialchars($data, ENT_QUOTES | ENT_HTML5, 'UTF-8');
