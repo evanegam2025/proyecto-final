@@ -3,24 +3,21 @@
 // INTERFAZ PRINCIPAL - REGISTRO DE VENTAS
 // ======================================================================
 
-// Configuración de la base de datos
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "proyecto-final";
+// Incluir archivos de configuración externos
+require_once 'conex_bd.php';
+require_once 'session_manager.php';
 
-// Crear conexión y establecer charset a UTF-8mb4
-$conn = new mysqli($servername, $username, $password, $dbname);
-$conn->set_charset("utf8mb4");
+// Proteger la página (verifica sesión y timeout automáticamente)
+protegerPagina();
 
-// Verificar conexión
-if ($conn->connect_error) {
-    die("Error de conexión a la base de datos: " . $conn->connect_error);
+// Obtener conexión a la base de datos
+try {
+    $conn = getDBConnection();
+} catch (Exception $e) {
+    die("Error al conectar con la base de datos: " . escapeHtml($e->getMessage()));
 }
 
-session_start();
-
-// VERIFICACIÓN CONSISTENTE CON MODULOS.PHP
+// VERIFICACIÓN DE SESIÓN - Variables establecidas por session_manager.php
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
     header("Location: index.php");
     exit();
@@ -29,25 +26,23 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
 // Obtener información completa del usuario de la base de datos
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("SELECT id, cedula, nombre, email, modulo FROM administrador WHERE id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bindParam(1, $user_id, PDO::PARAM_INT);
 $stmt->execute();
-$result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
+if ($stmt->rowCount() === 0) {
     // Usuario no encontrado, cerrar sesión
-    session_destroy();
-    header("Location: index.php?error=usuario_no_encontrado");
+    cerrarSesion(true, 'usuario_no_encontrado');
     exit();
 }
 
-$user_data = $result->fetch_assoc();
+$user_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Establecer variables sanitizadas
-$user_id = htmlspecialchars($user_data['id'], ENT_QUOTES, 'UTF-8');
-$cedula_usuario = htmlspecialchars($user_data['cedula'], ENT_QUOTES, 'UTF-8');
-$nombre_usuario = htmlspecialchars($user_data['nombre'], ENT_QUOTES, 'UTF-8');
-$email_usuario = htmlspecialchars($user_data['email'], ENT_QUOTES, 'UTF-8');
-$modulo_usuario = htmlspecialchars($user_data['modulo'], ENT_QUOTES, 'UTF-8');
+$user_id = escapeHtml($user_data['id']);
+$cedula_usuario = escapeHtml($user_data['cedula']);
+$nombre_usuario = escapeHtml($user_data['nombre']);
+$email_usuario = escapeHtml($user_data['email']);
+$modulo_usuario = escapeHtml($user_data['modulo']);
 
 // Actualizar variables de sesión para consistencia
 $_SESSION['cedula'] = $cedula_usuario;
@@ -55,7 +50,7 @@ $_SESSION['usuario'] = $cedula_usuario;
 $_SESSION['nombre'] = $nombre_usuario;
 $_SESSION['modulo'] = $modulo_usuario;
 
-// Configurar zona horaria de Colombia
+// Configurar zona horaria de Colombia (ya está en conex_bd.php, pero por seguridad)
 date_default_timezone_set('America/Bogota');
 
 // Obtener fecha y hora actual
@@ -99,31 +94,38 @@ $fecha_formateada = str_replace(
 );
 
 // OBTENER ESTADÍSTICAS INICIALES
-$stmt_stats = $conn->prepare("SELECT COUNT(*) as total_ventas, COUNT(CASE WHEN DATE(fecha) = CURDATE() THEN 1 END) as ventas_hoy, COUNT(CASE WHEN YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1) THEN 1 END) as ventas_semana, COUNT(CASE WHEN MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE()) THEN 1 END) as ventas_mes FROM ventas WHERE vendedor_cedula = ?");
+$stmt_stats = $conn->prepare("SELECT 
+    COUNT(*) as total_ventas, 
+    COUNT(CASE WHEN DATE(fecha) = CURDATE() THEN 1 END) as ventas_hoy, 
+    COUNT(CASE WHEN YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1) THEN 1 END) as ventas_semana, 
+    COUNT(CASE WHEN MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE()) THEN 1 END) as ventas_mes 
+    FROM ventas 
+    WHERE vendedor_cedula = ?");
 
 $statsData = ['ventas_hoy' => 0, 'ventas_semana' => 0, 'ventas_mes' => 0, 'total_ventas' => 0];
 
 if ($stmt_stats) {
-    $stmt_stats->bind_param("s", $cedula_usuario);
+    $stmt_stats->bindParam(1, $cedula_usuario, PDO::PARAM_STR);
     $stmt_stats->execute();
-    $result_stats = $stmt_stats->get_result();
-    if ($result_stats->num_rows > 0) {
-        $statsData = $result_stats->fetch_assoc();
+    if ($stmt_stats->rowCount() > 0) {
+        $statsData = $stmt_stats->fetch(PDO::FETCH_ASSOC);
     }
-    $stmt_stats->close();
 }
 
 // OBTENER LAS ÚLTIMAS 5 VENTAS DEL VENDEDOR PARA LA TABLA CRUD
-$stmt_ventas = $conn->prepare("SELECT id, fecha, nombre, cedula, telefono1, plan, tecnologia FROM ventas WHERE vendedor_cedula = ? ORDER BY fecha DESC LIMIT 5");
+$stmt_ventas = $conn->prepare("SELECT id, fecha, nombre, cedula, telefono1, plan, tecnologia 
+    FROM ventas 
+    WHERE vendedor_cedula = ? 
+    ORDER BY fecha DESC 
+    LIMIT 5");
+
 $mis_ventas = null;
 
 if ($stmt_ventas) {
-    $stmt_ventas->bind_param("s", $cedula_usuario);
+    $stmt_ventas->bindParam(1, $cedula_usuario, PDO::PARAM_STR);
     $stmt_ventas->execute();
-    $mis_ventas = $stmt_ventas->get_result();
+    $mis_ventas = $stmt_ventas->fetchAll(PDO::FETCH_ASSOC);
 }
-
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -249,25 +251,25 @@ $conn->close();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($mis_ventas && $mis_ventas->num_rows > 0): ?>
-                                <?php while ($venta = $mis_ventas->fetch_assoc()): ?>
-                                <tr id="venta-row-<?php echo htmlspecialchars($venta['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php if ($mis_ventas && count($mis_ventas) > 0): ?>
+                                <?php foreach ($mis_ventas as $venta): ?>
+                                <tr id="venta-row-<?php echo escapeHtml($venta['id']); ?>">
                                     <td><?php echo date('d/m/Y H:i', strtotime($venta['fecha'])); ?></td>
-                                    <td><?php echo htmlspecialchars($venta['nombre'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><?php echo htmlspecialchars($venta['cedula'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><?php echo htmlspecialchars($venta['telefono1'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                    <td><span class="badge bg-primary"><?php echo htmlspecialchars($venta['plan'], ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                    <td><span class="badge bg-info text-dark"><?php echo htmlspecialchars($venta['tecnologia'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td><?php echo escapeHtml($venta['nombre']); ?></td>
+                                    <td><?php echo escapeHtml($venta['cedula']); ?></td>
+                                    <td><?php echo escapeHtml($venta['telefono1']); ?></td>
+                                    <td><span class="badge bg-primary"><?php echo escapeHtml($venta['plan']); ?></span></td>
+                                    <td><span class="badge bg-info text-dark"><?php echo escapeHtml($venta['tecnologia']); ?></span></td>
                                     <td>
-                                        <button class="btn btn-sm btn-warning" onclick="handleEdit(<?php echo htmlspecialchars($venta['id'], ENT_QUOTES, 'UTF-8'); ?>)" title="Editar Venta">
+                                        <button class="btn btn-sm btn-warning" onclick="handleEdit(<?php echo escapeHtml($venta['id']); ?>)" title="Editar Venta">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" onclick="handleDelete(<?php echo htmlspecialchars($venta['id'], ENT_QUOTES, 'UTF-8'); ?>)" title="Eliminar Venta">
+                                        <button class="btn btn-sm btn-danger" onclick="handleDelete(<?php echo escapeHtml($venta['id']); ?>)" title="Eliminar Venta">
                                             <i class="bi bi-trash-fill"></i>
                                         </button>
                                     </td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
                                     <td colspan="7" class="text-center text-muted p-4">
@@ -437,7 +439,7 @@ $conn->close();
     </div> <!-- Fin container-fluid -->
 
     <!-- ======================== MODAL PARA EDITAR VENTA ======================== -->
-    <div class="modal fade" id="editVentaModal" tabindex="-1" aria-labelledby="editVentaModalLabel" aria-hidden="true">
+    <div class="modal fade" id="editVentaModal" tabindex="-1" aria-labelledby="editVentaModalLabel">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-warning text-dark">
@@ -560,6 +562,3 @@ $conn->close();
     <script src="js/registroventas.js"></script>
 </body>
 </html>
-<?php
-// No cerrar la conexión aquí ya que se cerró anteriormente
-?>

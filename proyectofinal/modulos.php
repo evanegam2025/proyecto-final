@@ -7,6 +7,9 @@ header('Content-Type: text/html; charset=UTF-8');
 ini_set('default_charset', 'UTF-8');
 mb_internal_encoding('UTF-8');
 
+
+
+
 // Verificar si el usuario está autenticado - VARIABLES CONSISTENTES
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
     // Redirigir al inicio si no hay sesión activa
@@ -78,7 +81,7 @@ $fecha_formateada = str_replace(
 $config = [
     'nombre_sistema' => 'SISTEMA DE VENTAS E INSTALACIONES',
     'subtitulo' => 'Internet para Todos',
-    'version' => '1.0.0'
+    'version' => '2.0.'
 ];
 ?>
 

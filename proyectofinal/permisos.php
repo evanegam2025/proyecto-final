@@ -1,6 +1,9 @@
 <?php
 // permisos.php - Gestión de Permisos
+
+
 require_once 'conex_bd.php';
+require_once 'session_manager.php';
 
 // Función para obtener permisos de la base de datos
 function obtenerPermisos($conn) {

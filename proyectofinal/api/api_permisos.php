@@ -22,6 +22,7 @@ mb_http_output('UTF-8');
 // Incluir archivo de conexión
 require_once __DIR__ . '/../conex_bd.php';
 
+
 // Configurar manejo de errores
 error_reporting(E_ALL);
 ini_set('display_errors', 0);

@@ -1,24 +1,25 @@
 <?php
 /**
  * SESSION_MANAGER.PHP - Manejo de sesiones y timeout
- * Incluir este archivo en todas las páginas protegidas
+ * Incluir este archivo en todas las paginas protegidas
  */
 
-// Iniciar sesión si no está iniciada
+// Iniciar sesion si no esta iniciada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Función para verificar si el usuario está logueado
+// Funcion para verificar si el usuario esta logueado
 function verificarSesion() {
-    return isset($_SESSION['usuario_id']) && isset($_SESSION['usuario']);
+    // CORREGIDO: Usar los nombres de variables que index.php establece
+    return isset($_SESSION['user_id']) && isset($_SESSION['user_name']);
 }
 
-// Función para verificar timeout de sesión
+// Funcion para verificar timeout de sesion
 function verificarTimeout() {
     // Verificar si existe last_activity y timeout_duration
     if (!isset($_SESSION['last_activity']) || !isset($_SESSION['timeout_duration'])) {
-        return false; // Sesión inválida
+        return false; // Sesion invalida
     }
     
     $tiempoInactivo = time() - $_SESSION['last_activity'];
@@ -27,17 +28,17 @@ function verificarTimeout() {
     return $tiempoInactivo <= $tiempoMaximo;
 }
 
-// Función para actualizar la actividad de la sesión
+// Funcion para actualizar la actividad de la sesion
 function actualizarActividad() {
     $_SESSION['last_activity'] = time();
 }
 
-// Función para cerrar sesión
+// Funcion para cerrar sesion
 function cerrarSesion($redirigir = true, $mensaje = 'sesion_cerrada') {
-    // Destruir todas las variables de sesión
+    // Destruir todas las variables de sesion
     $_SESSION = array();
     
-    // Destruir la cookie de sesión si existe
+    // Destruir la cookie de sesion si existe
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000,
@@ -46,16 +47,17 @@ function cerrarSesion($redirigir = true, $mensaje = 'sesion_cerrada') {
         );
     }
     
-    // Destruir la sesión
+    // Destruir la sesion
     session_destroy();
     
     if ($redirigir) {
-        header("Location: login.php?mensaje=$mensaje");
+        // CORREGIDO: Ahora redirige a index.php en lugar de login.php
+        header("Location: index.php?mensaje=$mensaje");
         exit;
     }
 }
 
-// Función para obtener información del usuario
+// Funcion para obtener informacion del usuario
 function getUsuarioInfo($campo = null) {
     if (!verificarSesion()) {
         return null;
@@ -65,37 +67,39 @@ function getUsuarioInfo($campo = null) {
         return $_SESSION[$campo] ?? null;
     }
     
+    // CORREGIDO: Usar los nombres de variables correctos
     return [
-        'id' => $_SESSION['usuario_id'] ?? null,
+        'id' => $_SESSION['user_id'] ?? null,
         'cedula' => $_SESSION['cedula'] ?? null,
-        'usuario' => $_SESSION['usuario'] ?? null,
-        'nombre' => $_SESSION['nombre'] ?? null,
-        'modulo' => $_SESSION['modulo'] ?? null,
+        'usuario' => $_SESSION['user_email'] ?? null,
+        'nombre' => $_SESSION['user_name'] ?? null,
+        'modulo' => $_SESSION['user_role'] ?? null,
         'login_time' => $_SESSION['login_time'] ?? null,
         'last_activity' => $_SESSION['last_activity'] ?? null
     ];
 }
 
-// Función para verificar permisos por módulo
+// Funcion para verificar permisos por modulo
 function verificarModulo($moduloRequerido) {
     if (!verificarSesion()) {
         return false;
     }
     
-    $moduloUsuario = $_SESSION['modulo'] ?? '';
+    // CORREGIDO: Usar user_role en lugar de modulo
+    $moduloUsuario = $_SESSION['user_role'] ?? '';
     
     // Administrador tiene acceso a todo
     if ($moduloUsuario === 'Administrador') {
         return true;
     }
     
-    // Verificar módulo específico
+    // Verificar modulo especifico
     return $moduloUsuario === $moduloRequerido;
 }
 
-// Función principal de verificación (usar en páginas protegidas)
+// Funcion principal de verificacion (usar en paginas protegidas)
 function protegerPagina($moduloRequerido = null) {
-    // Verificar si está logueado
+    // Verificar si esta logueado
     if (!verificarSesion()) {
         cerrarSesion(true, 'sesion_requerida');
         return;
@@ -107,7 +111,7 @@ function protegerPagina($moduloRequerido = null) {
         return;
     }
     
-    // Verificar permisos de módulo si se especifica
+    // Verificar permisos de modulo si se especifica
     if ($moduloRequerido && !verificarModulo($moduloRequerido)) {
         header('Location: acceso_denegado.php');
         exit;
@@ -117,14 +121,14 @@ function protegerPagina($moduloRequerido = null) {
     actualizarActividad();
 }
 
-// Manejo de solicitudes AJAX para verificar sesión
+// Manejo de solicitudes AJAX para verificar sesion
 if (isset($_GET['action']) && $_GET['action'] === 'check_session') {
     header('Content-Type: application/json');
     
     if (!verificarSesion() || !verificarTimeout()) {
         echo json_encode([
             'valid' => false,
-            'message' => 'Sesión expirada'
+            'message' => 'Sesion expirada'
         ]);
     } else {
         actualizarActividad();
@@ -139,9 +143,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_session') {
     exit;
 }
 
-// Auto-verificación si no es una solicitud AJAX
+// Auto-verificacion si no es una solicitud AJAX
 if (!isset($_GET['action'])) {
-    // Solo auto-proteger si no estamos en páginas públicas
+    // Solo auto-proteger si no estamos en paginas publicas
     $paginasPublicas = ['login.php', 'index.php', 'registro.php'];
     $paginaActual = basename($_SERVER['PHP_SELF']);
     

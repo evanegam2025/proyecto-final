@@ -2,51 +2,61 @@
 ===============================================================================
 SISTEMA DE VENTAS E INSTALACIONES - ESTILOS PERSONALIZADOS
 Archivo: css/stylos_modulos.css
-Versión: 2.1.0
-Codificación: UTF-8
+Version: 3.0.0
+Codificacion: UTF-8
 ===============================================================================
 */
 
-/* Variables CSS para colores empresariales pasteles */
+/* Variables CSS para colores empresariales profesionales */
 :root {
-  /* Colores principales pasteles */
-  --primary-soft: #e3f2fd;
-  --primary-medium: #90caf9;
-  --primary-dark: #1976d2;
+  /* Colores principales empresariales */
+  --primary-color: #1a237e;
+  --primary-light: #3949ab;
+  --primary-dark: #000051;
   
-  /* Colores secundarios pasteles */
-  --secondary-soft: #f3e5f5;
-  --secondary-medium: #ce93d8;
-  --secondary-dark: #7b1fa2;
+  /* Colores secundarios empresariales */
+  --secondary-color: #0d47a1;
+  --secondary-light: #5472d3;
+  --secondary-dark: #002171;
   
-  /* Colores de estado pasteles */
-  --success-soft: #e8f5e8;
-  --success-medium: #a5d6a7;
-  --success-dark: #388e3c;
+  /* Colores de acento */
+  --accent-blue: #1565c0;
+  --accent-teal: #00695c;
+  --accent-orange: #e65100;
+  --accent-red: #b71c1c;
   
-  --warning-soft: #fff3e0;
-  --warning-medium: #ffcc02;
-  --warning-dark: #f57c00;
+  /* Colores de estado profesionales */
+  --success-color: #1b5e20;
+  --success-light: #4caf50;
+  --success-dark: #003300;
   
-  --info-soft: #e0f7fa;
-  --info-medium: #4dd0e1;
-  --info-dark: #0097a7;
+  --warning-color: #e65100;
+  --warning-light: #ff9800;
+  --warning-dark: #bf360c;
   
-  --danger-soft: #ffebee;
-  --danger-medium: #ef9a9a;
-  --danger-dark: #d32f2f;
+  --info-color: #01579b;
+  --info-light: #0288d1;
+  --info-dark: #003d6b;
+  
+  --danger-color: #c62828;
+  --danger-light: #e53935;
+  --danger-dark: #8e0000;
   
   /* Colores neutros */
-  --gray-light: #f8f9fa;
-  --gray-medium: #6c757d;
-  --gray-dark: #343a40;
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eeeeee;
+  --gray-300: #e0e0e0;
+  --gray-500: #9e9e9e;
+  --gray-700: #616161;
+  --gray-900: #212121;
   --white: #ffffff;
   
-  /* Sombras suaves */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 15px 35px rgba(0, 0, 0, 0.15);
+  /* Sombras profesionales */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
   
   /* Transiciones */
   --transition-fast: all 0.2s ease-in-out;
@@ -54,13 +64,13 @@ Codificación: UTF-8
   --transition-slow: all 0.5s ease-in-out;
   
   /* Bordes redondeados */
-  --border-radius-sm: 6px;
-  --border-radius-md: 10px;
-  --border-radius-lg: 15px;
-  --border-radius-xl: 20px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
 }
 
-/* Reset y configuración base */
+/* Reset y configuracion base */
 * {
   margin: 0;
   padding: 0;
@@ -74,8 +84,8 @@ html {
 
 body {
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--secondary-soft) 100%);
-  color: var(--gray-dark);
+  background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%);
+  color: var(--gray-900);
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
@@ -90,6 +100,7 @@ body {
   height: 100%;
   background: rgba(255, 255, 255, 0.95);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -103,7 +114,7 @@ body {
 .loading-spinner .spinner-border {
   width: 3rem;
   height: 3rem;
-  color: var(--primary-dark) !important;
+  color: var(--primary-color);
 }
 
 /* Contenedor principal */
@@ -134,13 +145,13 @@ body {
   to { opacity: 1; }
 }
 
-/* Barra de información del usuario */
+/* Barra de informacion del usuario */
 .user-info-bar {
   background: var(--white);
   padding: 15px 25px;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--gray-200);
   transition: var(--transition-medium);
 }
 
@@ -157,22 +168,22 @@ body {
 
 .user-welcome i {
   font-size: 1.5rem;
-  color: var(--primary-dark);
+  color: var(--primary-color);
   margin-right: 10px;
 }
 
 .user-greeting {
   font-size: 1.1rem;
-  color: var(--gray-dark);
+  color: var(--gray-900);
   margin-right: 15px;
 }
 
 .user-role {
-  color: var(--gray-medium);
+  color: var(--white);
   font-size: 0.9rem;
   font-weight: 500;
-  background: var(--primary-soft);
-  padding: 2px 8px;
+  background: var(--primary-color);
+  padding: 4px 12px;
   border-radius: var(--border-radius-sm);
 }
 
@@ -184,11 +195,12 @@ body {
 
 /* Estilos para fecha y hora */
 .datetime-info {
-  background: linear-gradient(135deg, var(--info-soft), var(--primary-soft));
+  background: linear-gradient(135deg, var(--gray-50), var(--white));
   padding: 10px 15px;
   border-radius: var(--border-radius-md);
-  border-left: 3px solid var(--primary-dark);
+  border-left: 3px solid var(--primary-color);
   min-width: 200px;
+  box-shadow: var(--shadow-sm);
 }
 
 .current-datetime,
@@ -197,14 +209,14 @@ body {
   align-items: center;
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--gray-dark);
+  color: var(--gray-900);
   margin-bottom: 2px;
 }
 
 .current-datetime i,
 .current-time i {
   font-size: 0.9rem;
-  color: var(--primary-dark);
+  color: var(--primary-color);
   margin-right: 5px;
 }
 
@@ -212,7 +224,7 @@ body {
 .time-text {
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  color: var(--primary-dark);
+  color: var(--primary-color);
 }
 
 .time-text {
@@ -227,11 +239,11 @@ body {
 .full-date {
   font-size: 0.8rem;
   font-style: italic;
-  color: var(--gray-medium) !important;
+  color: var(--gray-700);
   display: block;
   text-align: center;
   margin-top: 4px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--gray-200);
   padding-top: 4px;
 }
 
@@ -243,11 +255,17 @@ body {
 }
 
 .user-actions #logoutBtn:hover {
-  background: var(--danger-dark);
-  border-color: var(--danger-dark);
+  background: var(--danger-color);
+  border-color: var(--danger-color);
   color: var(--white);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+.user-actions #refreshModulesBtn:hover {
+  background: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--white);
 }
 
 /* Header y logo */
@@ -259,6 +277,7 @@ header {
   margin-bottom: 30px;
   position: relative;
   overflow: hidden;
+  border: 1px solid var(--gray-200);
 }
 
 header::before {
@@ -268,7 +287,7 @@ header::before {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--primary-dark), var(--secondary-dark));
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
 }
 
 .logo-container {
@@ -292,41 +311,40 @@ header::before {
 .system-title {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 10px;
-  text-shadow: none;
 }
 
 .system-subtitle {
   font-size: 1.4rem;
   font-weight: 500;
-  color: var(--gray-medium);
+  color: var(--gray-700);
   margin-bottom: 10px;
 }
 
 .version-info {
   font-size: 0.9rem;
-  color: var(--gray-medium);
-  background: var(--gray-light);
+  color: var(--gray-700);
+  background: var(--gray-100);
   padding: 4px 12px;
   border-radius: var(--border-radius-sm);
   display: inline-block;
 }
 
-/* Título de módulos */
+/* Titulo de modulos */
 .modules-title {
   font-size: 1.8rem;
   font-weight: 600;
-  color: var(--gray-dark);
+  color: var(--gray-900);
   margin-bottom: 30px;
   position: relative;
 }
 
 .modules-title i {
-  color: var(--primary-dark);
+  color: var(--primary-color);
   margin-right: 10px;
 }
 
@@ -338,11 +356,11 @@ header::before {
   transform: translateX(-50%);
   width: 80px;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary-dark), var(--secondary-dark));
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
   border-radius: var(--border-radius-sm);
 }
 
-/* Grid de módulos */
+/* Grid de modulos */
 .modules-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -350,11 +368,11 @@ header::before {
   padding: 20px 0;
 }
 
-/* Botones de módulos */
+/* Botones de modulos */
 .btn-module {
   position: relative;
   padding: 25px 20px;
-  border: none;
+  border: 2px solid transparent;
   border-radius: var(--border-radius-lg);
   text-decoration: none;
   display: flex;
@@ -365,116 +383,102 @@ header::before {
   box-shadow: var(--shadow-md);
   overflow: hidden;
   background: var(--white);
-}
-
-.btn-module::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: inherit;
-  opacity: 0.1;
-  transition: var(--transition-medium);
+  color: var(--gray-900);
 }
 
 .btn-module:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-xl);
   text-decoration: none;
-}
-
-.btn-module:hover::before {
-  opacity: 0.2;
+  border-color: currentColor;
 }
 
 .btn-module:active {
   transform: translateY(-2px);
 }
 
-/* Colores específicos para cada módulo */
+/* Colores especificos para cada modulo */
 .btn-dashboard {
-  background: linear-gradient(135deg, var(--primary-soft), var(--primary-medium));
-  border-left: 4px solid var(--primary-dark);
+  background: var(--white);
+  border-left: 4px solid var(--primary-color);
 }
 
 .btn-dashboard:hover {
-  background: linear-gradient(135deg, var(--primary-medium), var(--primary-dark));
+  background: var(--primary-color);
   color: var(--white);
 }
 
 .btn-consultas {
-  background: linear-gradient(135deg, var(--info-soft), var(--info-medium));
-  border-left: 4px solid var(--info-dark);
+  background: var(--white);
+  border-left: 4px solid var(--info-color);
 }
 
 .btn-consultas:hover {
-  background: linear-gradient(135deg, var(--info-medium), var(--info-dark));
+  background: var(--info-color);
   color: var(--white);
 }
 
 .btn-ventas {
-  background: linear-gradient(135deg, var(--success-soft), var(--success-medium));
-  border-left: 4px solid var(--success-dark);
+  background: var(--white);
+  border-left: 4px solid var(--success-color);
 }
 
 .btn-ventas:hover {
-  background: linear-gradient(135deg, var(--success-medium), var(--success-dark));
+  background: var(--success-color);
   color: var(--white);
 }
 
 .btn-agendamiento {
-  background: linear-gradient(135deg, var(--warning-soft), #ffd54f);
-  border-left: 4px solid var(--warning-dark);
+  background: var(--white);
+  border-left: 4px solid var(--warning-color);
 }
 
 .btn-agendamiento:hover {
-  background: linear-gradient(135deg, #ffd54f, var(--warning-dark));
+  background: var(--warning-color);
   color: var(--white);
 }
 
 .btn-aprovisionamiento {
-  background: linear-gradient(135deg, var(--secondary-soft), var(--secondary-medium));
-  border-left: 4px solid var(--secondary-dark);
+  background: var(--white);
+  border-left: 4px solid var(--secondary-color);
 }
 
 .btn-aprovisionamiento:hover {
-  background: linear-gradient(135deg, var(--secondary-medium), var(--secondary-dark));
+  background: var(--secondary-color);
   color: var(--white);
 }
 
 .btn-permisos {
-  background: linear-gradient(135deg, #f0f4c3, #c5e1a5);
-  border-left: 4px solid #689f38;
+  background: var(--white);
+  border-left: 4px solid var(--accent-teal);
 }
 
 .btn-permisos:hover {
-  background: linear-gradient(135deg, #c5e1a5, #689f38);
+  background: var(--accent-teal);
   color: var(--white);
 }
 
 .btn-administrar-permisos {
-  background: linear-gradient(135deg, #e1f5fe, #81d4fa);
-  border-left: 4px solid #0277bd;
+  background: var(--white);
+  border-left: 4px solid var(--accent-blue);
 }
 
 .btn-administrar-permisos:hover {
-  background: linear-gradient(135deg, #81d4fa, #0277bd);
+  background: var(--accent-blue);
   color: var(--white);
 }
 
 .btn-usuario {
-  background: linear-gradient(135deg, var(--danger-soft), var(--danger-medium));
-  border-left: 4px solid var(--danger-dark);
+  background: var(--white);
+  border-left: 4px solid var(--danger-color);
 }
 
 .btn-usuario:hover {
-  background: linear-gradient(135deg, var(--danger-medium), var(--danger-dark));
+  background: var(--danger-color);
   color: var(--white);
 }
 
-/* Contenido del módulo */
+/* Contenido del modulo */
 .module-content {
   text-align: center;
   position: relative;
@@ -515,11 +519,12 @@ footer {
   padding: 20px;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
-  border-top: 2px solid var(--primary-soft);
+  border-top: 2px solid var(--gray-200);
 }
 
 footer small {
   line-height: 1.6;
+  color: var(--gray-700);
 }
 
 /* Tooltips personalizados */
@@ -528,14 +533,14 @@ footer small {
 }
 
 .tooltip-inner {
-  background: var(--gray-dark);
+  background: var(--gray-900);
   color: var(--white);
   border-radius: var(--border-radius-sm);
   padding: 8px 12px;
 }
 
 .tooltip.bs-tooltip-top .tooltip-arrow::before {
-  border-top-color: var(--gray-dark);
+  border-top-color: var(--gray-900);
 }
 
 /* Responsividad */
@@ -714,13 +719,13 @@ footer small {
 /* Accesibilidad y estados de enfoque */
 .btn-module:focus,
 .btn-module:focus-visible {
-  outline: 3px solid var(--primary-medium);
+  outline: 3px solid var(--primary-color);
   outline-offset: 2px;
 }
 
 #logoutBtn:focus,
 #logoutBtn:focus-visible {
-  outline: 2px solid var(--danger-medium);
+  outline: 2px solid var(--danger-color);
   outline-offset: 2px;
 }
 
@@ -739,30 +744,31 @@ footer small {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
   }
 }
 
-/* Mejoras para impresión */
+/* Mejoras para impresion */
 @media print {
   .user-actions,
   #logoutBtn,
+  #refreshModulesBtn,
   .loading-spinner {
-    display: none !important;
+    display: none;
   }
   
   body {
-    background: white !important;
+    background: white;
   }
   
   .main-container {
-    box-shadow: none !important;
+    box-shadow: none;
   }
 }
 
-/* Estados hover para dispositivos táctiles */
+/* Estados hover para dispositivos tactiles */
 @media (hover: hover) and (pointer: fine) {
   .btn-module:hover {
     transform: translateY(-5px);

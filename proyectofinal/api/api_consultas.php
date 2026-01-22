@@ -29,6 +29,7 @@ ob_start();
 try {
     // Incluir archivo de conexión
     require_once '../conex_bd.php';
+    
      
     // Limpiar cualquier output previo
     if (ob_get_level()) {

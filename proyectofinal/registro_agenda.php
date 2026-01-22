@@ -1,5 +1,6 @@
 <?php
 require_once 'api/api_registroagenda.php';
+require_once 'session_manager.php';
 ?>
 
 <!DOCTYPE html>

@@ -3,32 +3,38 @@
 // DESCARGAR BASE DE DATOS UNIFICADA COMPLETA (VENTAS + AGENDAMIENTO + APROVISIONAMIENTO)
 // ======================================================================
 
-// Configuración de la base de datos
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "proyecto-final";
+// Incluir archivos de configuracion externos
+@require_once 'conex_bd.php';
+@require_once 'session_manager.php';
 
-// Crear conexión y establecer charset a UTF-8mb4
-$conn = new mysqli($servername, $username, $password, $dbname);
-$conn->set_charset("utf8mb4");
-
-// Verificar conexión
-if ($conn->connect_error) {
-    die("Error de conexión a la base de datos: " . $conn->connect_error);
+// Verificar que las variables necesarias estén disponibles
+if (!isset($conn)) {
+    // Si no existe $conn, crear la conexión aquí
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "proyecto-final";
+    
+    $conn = new mysqli($servername, $username, $password, $dbname);
+    $conn->set_charset("utf8mb4");
+    
+    if ($conn->connect_error) {
+        die("Error: No se pudo establecer la conexión a la base de datos - " . $conn->connect_error);
+    }
 }
 
-session_start();
-
-// VERIFICACIÓN DE SESIÓN
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
-    header("Location: index.php");
-    exit();
+// Verificar sesión
+if (!isset($nombre_usuario_logueado) || !isset($cedula_usuario_logueado)) {
+    // Si no existen, iniciar sesión aquí
+    session_start();
+    
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_name'])) {
+        die("Error: Sesión no iniciada. Por favor, inicie sesión primero.");
+    }
+    
+    $cedula_usuario_logueado = $_SESSION['cedula'] ?? 'DESCONOCIDO';
+    $nombre_usuario_logueado = $_SESSION['nombre'] ?? 'USUARIO';
 }
-
-// Obtener información del usuario logueado
-$cedula_usuario_logueado = $_SESSION['cedula'];
-$nombre_usuario_logueado = $_SESSION['nombre'];
 
 // Configurar zona horaria de Colombia
 date_default_timezone_set('America/Bogota');
@@ -81,23 +87,29 @@ $cedulas_todas = [];
 
 // Obtener cédulas de ventas
 $result_cedulas_ventas = $conn->query("SELECT DISTINCT cedula FROM ventas ORDER BY cedula");
-while ($row = $result_cedulas_ventas->fetch_assoc()) {
-    $cedulas_todas[] = $row['cedula'];
+if ($result_cedulas_ventas) {
+    while ($row = $result_cedulas_ventas->fetch_assoc()) {
+        $cedulas_todas[] = $row['cedula'];
+    }
 }
 
 // Obtener cédulas de agendamiento
 $result_cedulas_agenda = $conn->query("SELECT DISTINCT cedula_cliente FROM agendamiento ORDER BY cedula_cliente");
-while ($row = $result_cedulas_agenda->fetch_assoc()) {
-    if (!in_array($row['cedula_cliente'], $cedulas_todas)) {
-        $cedulas_todas[] = $row['cedula_cliente'];
+if ($result_cedulas_agenda) {
+    while ($row = $result_cedulas_agenda->fetch_assoc()) {
+        if (!in_array($row['cedula_cliente'], $cedulas_todas)) {
+            $cedulas_todas[] = $row['cedula_cliente'];
+        }
     }
 }
 
 // Obtener cédulas de aprovisionamiento
 $result_cedulas_aprovisionamiento = $conn->query("SELECT DISTINCT cedula_cliente FROM aprovisionamiento ORDER BY cedula_cliente");
-while ($row = $result_cedulas_aprovisionamiento->fetch_assoc()) {
-    if (!in_array($row['cedula_cliente'], $cedulas_todas)) {
-        $cedulas_todas[] = $row['cedula_cliente'];
+if ($result_cedulas_aprovisionamiento) {
+    while ($row = $result_cedulas_aprovisionamiento->fetch_assoc()) {
+        if (!in_array($row['cedula_cliente'], $cedulas_todas)) {
+            $cedulas_todas[] = $row['cedula_cliente'];
+        }
     }
 }
 
@@ -314,37 +326,33 @@ foreach ($datos_completos as $registro) {
                 $color_fila = "";
                 switch ($row['estado_proceso']) {
                     case 'PROCESO COMPLETO':
-                        $color_fila = "background-color:#C8E6C9;"; // Verde claro
+                        $color_fila = "background-color:#C8E6C9;";
                         break;
                     case 'PENDIENTE APROVISIONAMIENTO':
-                        $color_fila = "background-color:#FFECB3;"; // Amarillo claro
+                        $color_fila = "background-color:#FFECB3;";
                         break;
                     case 'SOLO VENTA':
-                        $color_fila = "background-color:#FFCDD2;"; // Rojo claro
+                        $color_fila = "background-color:#FFCDD2;";
                         break;
                     case 'SOLO AGENDAMIENTO':
-                        $color_fila = "background-color:#E1BEE7;"; // Morado claro
+                        $color_fila = "background-color:#E1BEE7;";
                         break;
                     case 'SOLO APROVISIONAMIENTO':
-                        $color_fila = "background-color:#D7CCC8;"; // Café claro
+                        $color_fila = "background-color:#D7CCC8;";
                         break;
                     case 'VENTA Y APROVISIONAMIENTO':
-                        $color_fila = "background-color:#CFD8DC;"; // Gris azulado
+                        $color_fila = "background-color:#CFD8DC;";
                         break;
                     case 'AGENDAMIENTO Y APROVISIONAMIENTO':
-                        $color_fila = "background-color:#C5CAE9;"; // Azul claro
+                        $color_fila = "background-color:#C5CAE9;";
                         break;
                     default:
-                        $color_fila = "background-color:#F5F5F5;"; // Gris claro
+                        $color_fila = "background-color:#F5F5F5;";
                         break;
                 }
                 
                 echo "<tr style='$color_fila'>";
-                
-                // ESTADO DEL PROCESO
                 echo "<td style='font-weight:bold;'>" . limpiarParaExcel($row['estado_proceso']) . "</td>";
-                
-                // DATOS DE VENTA
                 echo "<td>" . ($row['fecha_venta'] ? limpiarParaExcel(date('d/m/Y H:i', strtotime($row['fecha_venta']))) : '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['cedula']) . "</td>";
                 echo "<td>" . limpiarParaExcel($row['nombre']) . "</td>";
@@ -359,15 +367,11 @@ foreach ($datos_completos as $registro) {
                 echo "<td>" . limpiarParaExcel($row['num_servicio'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['tecnologia'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['plan'] ?? '-') . "</td>";
-                
-                // DATOS DE AGENDAMIENTO
                 echo "<td>" . ($row['fecha_visita'] ? limpiarParaExcel(date('d/m/Y', strtotime($row['fecha_visita']))) : '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['franja_visita'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['tecnico_asignado'] ?? '-') . "</td>";
                 echo "<td style='font-weight:bold;'>" . limpiarParaExcel($row['estado_visita'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['notas_agendamiento'] ?? '-') . "</td>";
-                
-                // DATOS DE APROVISIONAMIENTO
                 echo "<td>" . limpiarParaExcel($row['tipo_radio'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['mac_serial_radio'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['tipo_router_onu'] ?? '-') . "</td>";
@@ -379,7 +383,6 @@ foreach ($datos_completos as $registro) {
                 echo "<td>" . limpiarParaExcel($row['notas_aprovisionamiento'] ?? '-') . "</td>";
                 echo "<td style='font-weight:bold;'>" . limpiarParaExcel($row['estado_aprovisionamiento'] ?? '-') . "</td>";
                 echo "<td>" . limpiarParaExcel($row['vendedor_nombre']) . "</td>";
-                
                 echo "</tr>";
             }
         } else {

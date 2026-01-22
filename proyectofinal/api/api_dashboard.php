@@ -13,6 +13,7 @@ session_start();
 
 require_once '../conex_bd.php';
 
+
 function enviarRespuesta($success, $data = null, $message = '', $code = 200) {
     http_response_code($code);
     $response = array(

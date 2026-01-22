@@ -1,6 +1,7 @@
 <?php
 // Incluir archivo de conexión
 require_once 'conex_bd.php';
+require_once 'session_manager.php';
 
 try {
     $conn = getDBConnection();
